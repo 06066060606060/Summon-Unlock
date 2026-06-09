@@ -3,7 +3,7 @@ inspired by nicolozak Nag-killer & ev-open-can-tools
 
 > **Research / educational project — not for use on public roads.**
 
-ESP32 firmware that lifts the EU geographic restriction on Tesla Smart Summon by intercepting and modifying a single CAN frame on the vehicle bus.
+ESP32 firmware that lifts the EU geographic restriction on Smart Summon by intercepting and modifying a single CAN frame on the vehicle bus.
 
 ---
 
@@ -52,7 +52,7 @@ Summoning = lastACA && sprSeen
 
 - **ESP32** (any variant with TWAI/CAN peripheral)
 - CAN transceiver (e.g. SN65HVD230, MCP2562)
-- Wired inline on the vehicle CAN bus — typically at the OBD-II port or X179 connector
+- Wired inline on the vehicle CAN bus — typically at the OBD-II port or X179 connector (tested on model Y HW4 Pin 13 & 14)
 
 ```
 Vehicle CAN bus
@@ -60,7 +60,7 @@ Vehicle CAN bus
     └── CAN L ──┘
 ```
 
-### Pin defaults (Atom S3 lite)
+### Pin defaults (Atom S3 lite with can base)
 
 ```cpp
 #define CAN_TX_PIN  5
