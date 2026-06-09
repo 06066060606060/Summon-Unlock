@@ -147,6 +147,4 @@ summon_unlock/
 
 ---
 
-## License
 
-MIT
