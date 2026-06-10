@@ -50,10 +50,13 @@ static inline uint8_t readVehicleGear(const uint8_t *data) {
     return (data[2] >> 5) & 0x07;
 }
 
-// gear==1 → Park. 0 (INVALID) et 7 (SNA) ignorés volontairement
-// pour éviter de couper la gate pendant les transitions de vitesse.
-static inline bool isParkedGear(uint8_t gear) {
-    return gear == 1;
+// gear==1 → Park.
+// gear 0 (INVALID) et 7 (SNA) → indéterminé, on ignore (retourne -1)
+// gear 2/3/4 (R/N/D) → roulage confirmé
+static inline int gearState(uint8_t gear) {
+    if (gear == 1)             return  1;   // Park confirmé
+    if (gear == 2 || gear == 3 || gear == 4) return 0;   // Roulage confirmé
+    return -1;                               // INVALID/SNA → ignorer
 }
 
 // ── CAN 921 : DAS_autopilotStatus (bits 0-2 de data[0]) ───────
@@ -83,6 +86,12 @@ static volatile bool gateSummoning = false;  // ACA && sprSeen
 // ── Summon discrimination (ACA + SPR) ─────────────────────────
 static volatile bool sprSeen  = false;  // UI_selfParkRequest vu pendant cet épisode
 static volatile bool lastAca  = false;  // DI_autonomyControlActive précédent
+
+// ── Timeout watchdog CAN 280 ─────────────────────────────────
+// Si CAN 280 n'arrive plus (bus silence), on repasse gateParked=true
+// après PARKED_TIMEOUT_MS pour ne pas bloquer le summon.
+#define PARKED_TIMEOUT_MS  5000
+static volatile uint32_t last280Millis = 0;
 
 // ── Stats ──────────────────────────────────────────────────────
 static volatile uint32_t rxMux1   = 0;   // frames CAN 1021 mux1 reçues
@@ -125,18 +134,22 @@ static void clearSummonOnParkIfAcaInactive(uint8_t gear) {
 // ── CAN 280 : met à jour Parked + ACA + Summoning ─────────────
 static void handle280(const uint8_t *data) {
     rx280++;
+    last280Millis = (uint32_t)millis();
     uint8_t gear = readDIGear(data);
+    int     gs   = gearState(gear);
 
     portENTER_CRITICAL(&stateMux);
 
-    gateParked = isParkedGear(gear);
+    // Ne mettre à jour gateParked que si le gear est explicite (P, R, N, D)
+    // gear INVALID(0) / SNA(7) pendant une transition → on conserve l'état précédent
+    if (gs == 1)  gateParked = true;
+    if (gs == 0)  gateParked = false;
+    // gs == -1 → rien : on garde gateParked tel quel
 
     // DI_autonomyControlActive = data[6] bit 2 (bit 50)
     bool aca = (data[6] & 0x04) != 0;
-    if (lastAca && !aca) {
-        // Fin d'épisode autonome → efface sprSeen pour ne pas polluer TACC suivant
-        sprSeen = false;
-    }
+    if (lastAca && !aca)
+        sprSeen = false;   // fin d'épisode → reset SPR
     lastAca = aca;
     recomputeSummoning();
 
@@ -145,14 +158,23 @@ static void handle280(const uint8_t *data) {
     portEXIT_CRITICAL(&stateMux);
 }
 
-// ── CAN 390 : mise à jour Parked depuis DIF_gear ───────────────
+// ── CAN 390 : mise à jour Parked depuis DIF_gear (source secondaire) ─
+// CAN 390 ne remplace CAN 280 que si le gear est explicite ET si
+// CAN 280 n'a pas été reçu depuis plus de PARKED_TIMEOUT_MS
+// (évite que 390 écrase un P confirmé par 280 avec un INVALID transitoire)
 static void handle390(const uint8_t *data) {
     rx390++;
     uint8_t gear = readVehicleGear(data);
+    int     gs   = gearState(gear);
+    if (gs < 0) return;   // INVALID/SNA → ignorer complètement
 
     portENTER_CRITICAL(&stateMux);
-    gateParked = isParkedGear(gear);
-    clearSummonOnParkIfAcaInactive(gear);
+    // N'écraser que si 280 est silencieux (fallback)
+    uint32_t age = (uint32_t)millis() - last280Millis;
+    if (last280Millis == 0 || age > PARKED_TIMEOUT_MS) {
+        gateParked = (gs == 1);
+        clearSummonOnParkIfAcaInactive(gear);
+    }
     portEXIT_CRITICAL(&stateMux);
 }
 
@@ -262,6 +284,18 @@ static void canTask(void *arg) {
             twai_initiate_recovery();
             vTaskDelay(pdMS_TO_TICKS(300));
         }
+
+        // Watchdog : si CAN 280 silencieux depuis > PARKED_TIMEOUT_MS
+        // (voiture garée avec Sentry, DI endormi) → forcer gateParked=true
+        // pour ne pas bloquer le summon au réveil.
+        uint32_t now = (uint32_t)millis();
+        portENTER_CRITICAL(&stateMux);
+        bool can280Stale = (last280Millis > 0) &&
+                           (now - last280Millis > PARKED_TIMEOUT_MS);
+        if (can280Stale)
+            gateParked = true;
+        portEXIT_CRITICAL(&stateMux);
+
         vTaskDelay(1);
     }
 }
@@ -385,7 +419,7 @@ void setup() {
                   (int)twai_start());
 
     Serial.println("=== SummonUnlock ready ===");
-    Serial.println("  Injection gate : APActive || Parked || Summoning");
+    Serial.println("  Injection gate : Parked || Summoning");
     Serial.println("  CAN 1021 mux1  : bit19->0, bit47->1");
     Serial.printf ("  summonEnabled  : %s\n", summonEnabled ? "true" : "false");
 
