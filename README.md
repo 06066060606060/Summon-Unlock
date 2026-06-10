@@ -78,6 +78,7 @@ How it works
 The ESP32 exposes a BLE GATT server alongside the existing Wi-Fi AP. Both run simultaneously on separate RTOS tasks. The GitHub Pages app uses the Web Bluetooth API built into Chrome to communicate directly with the ESP32 over BLE.
 
 Usage:
+
 1- Open the GitHub Pages URL https://06066060606060.github.io/Summon-Unlock/ in Chrome on Android
 
 2- Tap Connect via Bluetooth
