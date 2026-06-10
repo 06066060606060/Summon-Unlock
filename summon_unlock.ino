@@ -2,11 +2,20 @@
  * SummonUnlock — Arduino IDE (ESP32 + TWAI natif)
  *
  * Logique complète portée depuis handlers.h :
- *  - Injection gate  : APActive || Parked || Summoning
+ *  - Injection gate  : Parked || Summoning
  *  - Détection ACA   : CAN 280  bit 50  (DI_autonomyControlActive)
  *  - Détection SPR   : CAN 1016 data[3] bits 4-7 (UI_selfParkRequest)
  *  - Gear Parked     : CAN 280  (DI_gear) + CAN 390 (DIF_gear)
  *  - Inject mux 1    : CAN 1021, bit 19→0, bit 47→1  (HW4)
+ *
+ * Connectivité :
+ *  - Wi-Fi AP   : dashboard HTML complet  → http://192.168.4.1
+ *  - BLE GATT   : contrôle depuis Web Bluetooth (Chrome Android / page GitHub Pages)
+ *
+ * BLE UUIDs :
+ *  Service  : 12345678-1234-1234-1234-123456789abc
+ *  CTRL     : 12345678-1234-1234-1234-123456789001  (write  : "1"=enable "0"=disable)
+ *  STATS    : 12345678-1234-1234-1234-123456789002  (notify : JSON stats ~1s)
  *
  * ── Pins ──────────────────────────────────────────
  * Modifier selon ton câblage :
@@ -19,6 +28,10 @@
 #include <WebServer.h>
 #include <Preferences.h>
 #include "driver/twai.h"
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
 
 // ═══════════════════════════════════════════════════════════════
 // HELPERS CAN
@@ -301,6 +314,86 @@ static void canTask(void *arg) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// BLE GATT
+// ═══════════════════════════════════════════════════════════════
+
+#define BLE_SERVICE_UUID   "12345678-1234-1234-1234-123456789abc"
+#define BLE_CHAR_CTRL_UUID "12345678-1234-1234-1234-123456789001"  // write
+#define BLE_CHAR_STAT_UUID "12345678-1234-1234-1234-123456789002"  // notify
+
+static BLECharacteristic *bleStatChar = nullptr;
+static volatile bool      bleConnected = false;
+
+// Callback connexion/déconnexion
+class BleServerCb : public BLEServerCallbacks {
+    void onConnect(BLEServer *)    override {
+        bleConnected = true;
+        Serial.println("[BLE] Client connecté");
+    }
+    void onDisconnect(BLEServer *s) override {
+        bleConnected = false;
+        Serial.println("[BLE] Client déconnecté — re-advertising");
+        s->startAdvertising();
+    }
+};
+
+// Callback écriture sur CTRL : "1" → enable, "0" → disable
+class BleCtrlCb : public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *c) override {
+        String val = c->getValue().c_str();
+        bool next = (val == "1" || val == "true" || val == "on");
+        portENTER_CRITICAL(&stateMux);
+        summonEnabled = next;
+        portEXIT_CRITICAL(&stateMux);
+        cfgSave();
+        Serial.printf("[BLE] summonEnabled → %s\n", next ? "true" : "false");
+    }
+};
+
+static void bleSetup() {
+    BLEDevice::init("SummonUnlock");
+    BLEServer *srv = BLEDevice::createServer();
+    srv->setCallbacks(new BleServerCb());
+
+    BLEService *svc = srv->createService(BLE_SERVICE_UUID);
+
+    // Caractéristique CTRL (write)
+    BLECharacteristic *ctrlChar = svc->createCharacteristic(
+        BLE_CHAR_CTRL_UUID,
+        BLECharacteristic::PROPERTY_WRITE
+    );
+    ctrlChar->setCallbacks(new BleCtrlCb());
+
+    // Caractéristique STATS (notify)
+    bleStatChar = svc->createCharacteristic(
+        BLE_CHAR_STAT_UUID,
+        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ
+    );
+    bleStatChar->addDescriptor(new BLE2902());
+
+    svc->start();
+
+    BLEAdvertising *adv = BLEDevice::getAdvertising();
+    adv->addServiceUUID(BLE_SERVICE_UUID);
+    adv->setScanResponse(true);
+    adv->setMinPreferred(0x06);
+    BLEDevice::startAdvertising();
+    Serial.println("[BLE] Advertising — SummonUnlock");
+}
+
+// Tâche BLE : envoie le JSON stats toutes les secondes si un client est connecté
+static void bleTask(void *arg) {
+    for (;;) {
+        if (bleConnected && bleStatChar) {
+            String j = statsToJson();
+            bleStatChar->setValue(j.c_str());
+            bleStatChar->notify();
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // DASHBOARD WI-FI
 // ═══════════════════════════════════════════════════════════════
 
@@ -423,8 +516,11 @@ void setup() {
     Serial.println("  CAN 1021 mux1  : bit19->0, bit47->1");
     Serial.printf ("  summonEnabled  : %s\n", summonEnabled ? "true" : "false");
 
-    xTaskCreatePinnedToCore(canTask, "can", 4096, nullptr, 5, nullptr, 1);
-    xTaskCreatePinnedToCore(webTask, "web", 8192, nullptr, 1, nullptr, 0);
+    xTaskCreatePinnedToCore(canTask, "can", 4096,  nullptr, 5, nullptr, 1);
+    xTaskCreatePinnedToCore(webTask, "web", 8192,  nullptr, 1, nullptr, 0);
+
+    bleSetup();
+    xTaskCreatePinnedToCore(bleTask, "ble", 4096,  nullptr, 1, nullptr, 0);
 }
 
 void loop() { vTaskDelay(pdMS_TO_TICKS(1000)); }
