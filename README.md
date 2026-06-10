@@ -71,6 +71,22 @@ Change these in `summon_unlock.ino` to match your wiring.
 
 ---
 
+## Web Bluetooth Dashboard
+A standalone dashboard page hosted on GitHub Pages allows you to control and monitor the device directly from Chrome on Android — without connecting to the ESP32 Wi-Fi network.
+
+How it works
+The ESP32 exposes a BLE GATT server alongside the existing Wi-Fi AP. Both run simultaneously on separate RTOS tasks. The GitHub Pages app uses the Web Bluetooth API built into Chrome to communicate directly with the ESP32 over BLE.
+
+Usage:
+1-Open the GitHub Pages URL https://06066060606060.github.io/Summon-Unlock/ in Chrome on Android
+2-Tap Connect via Bluetooth
+3-Select SummonUnlock from the device picker
+4-Use the Enable / Disable buttons to control injection
+5-All gate flags and CAN counters update in real time via BLE notify
+
+-The BLE device name is always SummonUnlock regardless of MAC address, making it easy to identify in the picker
+
+
 ## Wi-Fi Dashboard
 
 After boot the ESP32 creates a Wi-Fi access point:
