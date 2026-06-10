@@ -252,7 +252,7 @@ function applyStats(s) {
   // Gate
   const gate = s.gate;
   const gb = $('gate_bar');
-  gb.textContent = gate ? 'OPEN — injection autorisée' : 'CLOSED — injection bloquée';
+  gb.textContent = gate ? 'OPEN — injection allowed' : 'CLOSED — injection blocked';
   gb.className   = 'gate-bar ' + (gate ? 'open' : 'closed');
 
   const setGbox = (id, active, val) => {
