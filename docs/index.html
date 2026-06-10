@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SummonUnlock — BLE</title>
+<style>
+  :root {
+    --bg:#0d1117; --panel:#161b22; --line:#30363d; --txt:#c9d1d9;
+    --muted:#8b949e; --accent:#58a6ff; --ok:#3fb950; --warn:#d29922; --bad:#f85149;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 ui-monospace,Consolas,Menlo,monospace;min-height:100dvh}
+  header{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  header h1{margin:0;font-size:16px;font-weight:700;color:var(--accent)}
+  .pill{font-size:11px;padding:3px 9px;border:1px solid var(--line);border-radius:10px;color:var(--muted);transition:color .2s,border-color .2s}
+  .pill.ok{color:var(--ok);border-color:var(--ok)}
+  .pill.bad{color:var(--bad);border-color:var(--bad)}
+
+  main{max-width:480px;margin:0 auto;padding:14px;display:grid;gap:12px}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+  .panel h2{margin:0 0 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+
+  /* Connect button */
+  #btn_connect{width:100%;padding:14px;font:inherit;font-size:16px;font-weight:700;
+    background:var(--accent);color:#0d1117;border:none;border-radius:8px;cursor:pointer;
+    transition:filter .15s}
+  #btn_connect:hover{filter:brightness(1.1)}
+  #btn_connect:disabled{background:#21262d;color:var(--muted);cursor:not-allowed}
+
+  /* Big toggle */
+  .big{font-size:56px;font-weight:700;text-align:center;padding:20px 0;border-radius:8px;
+    border:2px solid var(--line);letter-spacing:2px;transition:color .2s,border-color .2s}
+  .big.on {color:var(--ok);border-color:var(--ok)}
+  .big.off{color:var(--bad);border-color:var(--bad)}
+  .tbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .tbar button{font:inherit;font-size:14px;font-weight:700;padding:11px;border-radius:6px;
+    border:1px solid var(--line);background:#21262d;color:var(--txt);cursor:pointer}
+  .tbar button.primary{background:var(--ok);color:#0d1117;border-color:transparent}
+  .tbar button.danger{color:var(--bad);border-color:#3a1f23}
+  .tbar button:hover{filter:brightness(1.15)}
+  .tbar button:disabled{opacity:.35;cursor:not-allowed;filter:none}
+
+  /* Gate */
+  .gate{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  .gbox{border:1px solid var(--line);border-radius:6px;padding:8px 10px;text-align:center;transition:border-color .2s,background .2s}
+  .gbox .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .gbox .v{font-size:15px;font-weight:700;margin-top:2px}
+  .gbox.active{border-color:var(--ok);background:#0d2a15}
+  .gate-bar{text-align:center;font-size:13px;font-weight:600;padding:8px;border-radius:6px;
+    border:1px solid var(--line);transition:all .2s}
+  .gate-bar.open{color:var(--ok);border-color:var(--ok);background:#0d2a15}
+  .gate-bar.closed{color:var(--bad);border-color:#3a1f23;background:#2a0d0d}
+
+  /* Stats */
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+  .stat{background:#0d1117;border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+  .stat .k{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .stat .v{font-size:18px;font-weight:600;margin-top:2px}
+
+  /* Compat banner */
+  .compat{font-size:11px;color:var(--muted);padding:10px 12px;border:1px solid var(--line);
+    border-radius:6px;line-height:1.6;display:none}
+  .compat.show{display:block}
+  .compat a{color:var(--accent)}
+
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+  .footer{color:var(--muted);font-size:11px;text-align:center;padding:8px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>SummonUnlock</h1>
+  <span class="pill" id="conn_pill">disconnected</span>
+</header>
+<main>
+
+  <!-- Compat warning -->
+  <div class="compat" id="compat_warn">
+    &#9888; Web Bluetooth requires <strong>Chrome / Edge on Android</strong> (or desktop Chrome with flag enabled).
+    Safari and Firefox do not support Web Bluetooth.<br>
+    <a href="https://caniuse.com/web-bluetooth" target="_blank">Browser compatibility →</a>
+  </div>
+
+  <!-- Connect -->
+  <section class="panel">
+    <h2>Connection</h2>
+    <button id="btn_connect" onclick="connect()">Connect via Bluetooth</button>
+    <p style="font-size:11px;color:var(--muted);margin:8px 0 0;text-align:center">
+      Scans for <code>SummonUnlock</code> BLE device
+    </p>
+  </section>
+
+  <!-- Toggle -->
+  <section class="panel" id="ctrl_panel" style="display:none">
+    <h2>Summon Unlock</h2>
+    <div class="big" id="big">—</div>
+    <div class="tbar">
+      <button class="primary" id="btn_en"  onclick="sendCtrl('1')" disabled>Enable</button>
+      <button class="danger"  id="btn_dis" onclick="sendCtrl('0')" disabled>Disable</button>
+    </div>
+  </section>
+
+  <!-- Gate -->
+  <section class="panel" id="gate_panel" style="display:none">
+    <h2>Injection Gate</h2>
+    <div class="gate-bar" id="gate_bar">—</div>
+    <br>
+    <div class="gate">
+      <div class="gbox" id="g_pk"><div class="k">Parked</div><div class="v" id="g_pk_v">—</div></div>
+      <div class="gbox" id="g_su"><div class="k">Summoning</div><div class="v" id="g_su_v">—</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center">
+      <span>APActive (info) :</span><span id="g_ap_v" style="font-weight:600">—</span>
+    </div>
+  </section>
+
+  <!-- Discrimination -->
+  <section class="panel" id="disc_panel" style="display:none">
+    <h2>Summon / TACC Discrimination</h2>
+    <div class="row">
+      <div class="stat">
+        <div class="k">ACA (CAN 280)</div>
+        <div class="v" id="d_aca">—</div>
+      </div>
+      <div class="stat">
+        <div class="k">SPR (CAN 1016)</div>
+        <div class="v" id="d_spr">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="panel" id="stats_panel" style="display:none">
+    <h2>CAN Frames</h2>
+    <div class="row">
+      <div class="stat"><div class="k">280</div><div class="v" id="s_280">—</div></div>
+      <div class="stat"><div class="k">390</div><div class="v" id="s_390">—</div></div>
+      <div class="stat"><div class="k">921</div><div class="v" id="s_921">—</div></div>
+      <div class="stat"><div class="k">1016</div><div class="v" id="s_1016">—</div></div>
+      <div class="stat"><div class="k">1021 mux1</div><div class="v" id="s_rx">—</div></div>
+      <div class="stat"><div class="k">TX ok</div><div class="v ok" id="s_ok">—</div></div>
+      <div class="stat"><div class="k">TX fail</div><div class="v" id="s_fail">—</div></div>
+      <div class="stat"><div class="k">Uptime</div><div class="v" id="s_up">—</div></div>
+    </div>
+  </section>
+
+  <div class="footer">research / educational only · not for use on public roads</div>
+</main>
+
+<script>
+// ── UUIDs (doivent correspondre au firmware) ────────────────────
+const SVC_UUID  = '12345678-1234-1234-1234-123456789abc';
+const CTRL_UUID = '12345678-1234-1234-1234-123456789001';
+const STAT_UUID = '12345678-1234-1234-1234-123456789002';
+
+const $ = id => document.getElementById(id);
+
+let ctrlChar = null;
+
+// ── Vérification compatibilité ──────────────────────────────────
+if (!navigator.bluetooth) {
+  $('compat_warn').classList.add('show');
+  $('btn_connect').disabled = true;
+}
+
+// ── Connexion BLE ───────────────────────────────────────────────
+async function connect() {
+  try {
+    $('btn_connect').textContent = 'Scanning…';
+    $('btn_connect').disabled = true;
+
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'SummonUnlock' }],
+      optionalServices: [SVC_UUID]
+    });
+
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+
+    const server  = await device.gatt.connect();
+    const service = await server.getPrimaryService(SVC_UUID);
+
+    // Caractéristique de contrôle (write)
+    ctrlChar = await service.getCharacteristic(CTRL_UUID);
+
+    // Caractéristique stats (notify)
+    const statChar = await service.getCharacteristic(STAT_UUID);
+    await statChar.startNotifications();
+    statChar.addEventListener('characteristicvaluechanged', onStats);
+
+    onConnected(device.name);
+  } catch (e) {
+    console.error(e);
+    $('btn_connect').textContent = 'Connect via Bluetooth';
+    $('btn_connect').disabled = false;
+    $('conn_pill').textContent = 'error';
+    $('conn_pill').className = 'pill bad';
+  }
+}
+
+function onConnected(name) {
+  $('conn_pill').textContent = name || 'connected';
+  $('conn_pill').className = 'pill ok';
+  $('btn_connect').textContent = 'Connected';
+  // Afficher tous les panels
+  ['ctrl_panel','gate_panel','disc_panel','stats_panel'].forEach(id => {
+    $(id).style.display = 'block';
+  });
+  $('btn_en').disabled  = false;
+  $('btn_dis').disabled = false;
+}
+
+function onDisconnected() {
+  ctrlChar = null;
+  $('conn_pill').textContent = 'disconnected';
+  $('conn_pill').className = 'pill bad';
+  $('btn_connect').textContent = 'Connect via Bluetooth';
+  $('btn_connect').disabled = false;
+  $('btn_en').disabled  = true;
+  $('btn_dis').disabled = true;
+  $('big').textContent = '—';
+  $('big').className = 'big';
+  $('gate_bar').textContent = '—';
+  $('gate_bar').className = 'gate-bar';
+}
+
+// ── Envoi commande ──────────────────────────────────────────────
+async function sendCtrl(val) {
+  if (!ctrlChar) return;
+  try {
+    const enc = new TextEncoder();
+    await ctrlChar.writeValue(enc.encode(val));
+  } catch(e) { console.error('sendCtrl:', e); }
+}
+
+// ── Réception stats notify ──────────────────────────────────────
+function onStats(e) {
+  try {
+    const dec = new TextDecoder();
+    const s = JSON.parse(dec.decode(e.target.value));
+    applyStats(s);
+  } catch(e) { console.error('onStats:', e); }
+}
+
+function applyStats(s) {
+  // Toggle
+  const big = $('big');
+  big.textContent = s.enabled ? 'ON' : 'OFF';
+  big.className   = 'big ' + (s.enabled ? 'on' : 'off');
+
+  // Gate
+  const gate = s.gate;
+  const gb = $('gate_bar');
+  gb.textContent = gate ? 'OPEN — injection autorisée' : 'CLOSED — injection bloquée';
+  gb.className   = 'gate-bar ' + (gate ? 'open' : 'closed');
+
+  const setGbox = (id, active, val) => {
+    $(id).className = 'gbox ' + (active ? 'active' : '');
+    $(id + '_v').textContent = active ? 'ON' : 'off';
+  };
+  setGbox('g_pk', s.parked);
+  setGbox('g_su', s.summon);
+  $('g_ap_v').textContent = s.ap ? 'ON' : 'off';
+  $('g_ap_v').style.color = s.ap ? 'var(--ok)' : 'var(--muted)';
+
+  // Discrimination
+  $('d_aca').textContent = s.aca ? 'ACTIVE' : 'inactive';
+  $('d_aca').className = 'v ' + (s.aca ? 'ok' : '');
+  $('d_spr').textContent = s.spr ? 'SEEN' : 'not seen';
+  $('d_spr').className = 'v ' + (s.spr ? 'ok' : '');
+
+  // Compteurs
+  $('s_280').textContent  = s.rx280;
+  $('s_390').textContent  = s.rx390;
+  $('s_921').textContent  = s.rx921;
+  $('s_1016').textContent = s.rx1016;
+  $('s_rx').textContent   = s.rxMux1;
+  $('s_ok').textContent   = s.txOk;
+  $('s_fail').textContent = s.txFail;
+  $('s_fail').className   = 'v ' + (s.txFail > 0 ? 'warn' : '');
+
+  const u = s.uptimeS || 0;
+  $('s_up').textContent = u < 60 ? u + 's' : Math.floor(u/60) + 'm' + (u%60) + 's';
+}
+</script>
+</body>
+</html>
