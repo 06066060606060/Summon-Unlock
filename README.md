@@ -79,9 +79,13 @@ The ESP32 exposes a BLE GATT server alongside the existing Wi-Fi AP. Both run si
 
 Usage:
 1-Open the GitHub Pages URL https://06066060606060.github.io/Summon-Unlock/ in Chrome on Android
+
 2-Tap Connect via Bluetooth
+
 3-Select SummonUnlock from the device picker
+
 4-Use the Enable / Disable buttons to control injection
+
 5-All gate flags and CAN counters update in real time via BLE notify
 
 -The BLE device name is always SummonUnlock regardless of MAC address, making it easy to identify in the picker
