@@ -101,8 +101,8 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
       <span id="g_ap_v" style="font-weight:600">—</span>
     </div>
     <p style="font-size:11px;color:var(--muted);margin:6px 0 0">
-      Gate ouverte si Parked OR Summoning uniquement.<br>
-      APActive (AP/TACC) seul ne déclenche pas l'injection.
+      Gate open if Parked OR Summoning only.<br>
+      APActive (AP/TACC) only, doesn't start injection.
     </p>
   </section>
 
@@ -122,7 +122,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
       </div>
     </div>
     <p style="font-size:11px;color:var(--muted);margin:8px 0 0">
-      Summoning = ACA &amp;&amp; SPR. TACC seul (ACA=1, SPR=0) ne déclenche pas l'injection.
+      Summoning = ACA &amp;&amp; SPR. TACC only (ACA=1, SPR=0) does not trigger the injection.
     </p>
   </section>
 
@@ -144,15 +144,15 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 
   <!-- Règle -->
   <section class="panel">
-    <h2>Règle appliquée</h2>
+    <h2>Rules applied</h2>
     <div class="rule">
       ID <code>0x3FD</code> (1021) &mdash; mux <code>1</code><br>
       &bull; bit <code>19</code> &rarr; <code>0</code> &mdash; Clears the summon EU restriction bit<br>
       &bull; bit <code>47</code> &rarr; <code>1</code> &mdash; Sets the summon enable bit<br><br>
-      Condition d'injection :<br>
+      Injection condition :<br>
       &nbsp;&nbsp;<code>summonEnabled &amp;&amp; (Parked || Summoning)</code><br>
       Summoning :<br>
-      &nbsp;&nbsp;<code>lastAca &amp;&amp; sprSeen</code> — ACA tombe → sprSeen effacé
+      &nbsp;&nbsp;<code>lastAca &amp;&amp; sprSeen</code> — ACA tombe → sprSeen cleared
     </div>
   </section>
 
@@ -183,7 +183,7 @@ async function fetchStats() {
     // Gate
     const gate = s.gate;
     const gs = $('gate_status');
-    gs.textContent = gate ? 'OPEN — injection autorisée' : 'CLOSED — injection bloquée';
+    gs.textContent = gate ? 'OPEN — injection allowed' : 'CLOSED — injection blocked';
     gs.className   = 'gate-status ' + (gate ? 'open' : 'closed');
 
     $('g_ap_v').textContent = s.ap ? 'ON' : 'off';
