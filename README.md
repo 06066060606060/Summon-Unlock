@@ -42,7 +42,7 @@ Summoning = lastACA && sprSeen
 
 | Hardware | Tested | CAN ID | Mux | Bit 19 | Bit 47 |
 |----------|--------|--------|-----|--------|--------|
-| HW4 (FSD Computer) | — | 1021 | 1 | ✓ | ✓ |
+| HW4      | ✓      | 1021   | 1   | ✓     | ✓      |
 
 > Bit 46 is used on some older HW3 builds. The current firmware targets **bit 47** per the confirmed rule set.
 
