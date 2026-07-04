@@ -168,5 +168,11 @@ summon_unlock/
 
 ---
 
+## Future Update
+
+- Add "EU bypass torque limits in autopilot" functionality
+
+---
+
 ## My Discord server: 
 https://discord.gg/9t5pMuts3
