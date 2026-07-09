@@ -221,6 +221,7 @@ static void handle1016(const uint8_t *data, uint8_t dlc) {
 // Règle :
 //   bit 19 → 0   Clears the summon EU restriction bit
 //   bit 47 → 1   Sets the summon enable bit  (HW4)
+//   bit 46 → 1   Sets the summon enable bit  (HW3)
 //
 // Condition : summonEnabled ET injectionGateOpen()
 // ═══════════════════════════════════════════════════════════════
@@ -251,7 +252,8 @@ static void injectSummon(const twai_message_t &src) {
     setBit(out.data, 19, false);
     // bit 47 = data[5] bit 7 → 1  (summon enable)
     setBit(out.data, 47, true);
-
+    // HW3
+    //setBit(out.data, 46, true); 
     rxMux1++;
     esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
     if (err == ESP_OK) txOk++;
