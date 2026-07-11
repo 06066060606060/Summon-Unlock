@@ -65,14 +65,6 @@
   .compat.show{display:block}
   .compat a{color:var(--accent)}
 
-  /* AP State */
-  .ap-state{border:1px solid var(--line);border-radius:8px;padding:14px;text-align:center;transition:all .2s}
-  .ap-label{font-size:22px;font-weight:700;letter-spacing:.04em;margin:6px 0 2px}
-  .ap-raw{font-size:11px;color:var(--muted)}
-  .ap-state.active{border-color:var(--ok);background:#0d2a15}
-  .ap-state.restricted{border-color:var(--warn);background:#2a1f0d}
-  .ap-state.fault{border-color:var(--bad);background:#2a0d0d}
-
   .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
   .footer{color:var(--muted);font-size:11px;text-align:center;padding:8px 0}
 </style>
@@ -100,50 +92,13 @@
     </p>
   </section>
 
-  <!-- Toggle Summon -->
+  <!-- Toggle -->
   <section class="panel" id="ctrl_panel" style="display:none">
     <h2>Summon Unlock</h2>
     <div class="big" id="big">—</div>
     <div class="tbar">
       <button class="primary" id="btn_en"  onclick="sendCtrl('1')" disabled>Enable</button>
       <button class="danger"  id="btn_dis" onclick="sendCtrl('0')" disabled>Disable</button>
-    </div>
-  </section>
-
-  <!-- AP EU Unlock -->
-  <section class="panel" id="ap_panel" style="display:none">
-    <h2>AP EU Unlock</h2>
-    <p style="font-size:11px;color:var(--muted);margin:0 0 10px">
-      Injects <code>bit 19 → 0</code> on CAN 1021 mux 0 after <strong>3 seconds</strong>
-      when Autopilot engages. Clears the EU geographic restriction flag.
-    </p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <div class="stat"><div class="k">AP Unlock</div><div class="v" id="ap_en_v">—</div></div>
-      <div class="stat"><div class="k">Window</div><div class="v" id="ap_win_v">—</div></div>
-    </div>
-    <div class="tbar" style="grid-template-columns:1fr 1fr">
-      <button class="primary" id="btn_ap_en"  onclick="sendAPCtrl('1')" disabled>Enable</button>
-      <button class="danger"  id="btn_ap_dis" onclick="sendAPCtrl('0')" disabled>Disable</button>
-    </div>
-  </section>
-
-  <!-- AP State -->
-  <section class="panel" id="ap_state_panel" style="display:none">
-    <h2>Autopilot State</h2>
-    <div class="ap-state" id="ap_state_box">
-      <div class="ap-label" id="ap_label">—</div>
-      <div class="ap-raw">DI_autonomyControlActive · CAN 280 · data[6] bit 2</div>
-    </div>
-    <div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">AP EU Unlock</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div class="stat"><div class="k">Enabled</div><div class="v" id="ap_en_v">—</div></div>
-        <div class="stat"><div class="k">Window</div><div class="v" id="ap_win_v">—</div></div>
-        <div class="stat"><div class="k">TX ok</div><div class="v ok" id="ap_tx_ok">—</div></div>
-      </div>
-      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">
-        Injects <code>bit 19 → 0</code> on CAN 1021 mux 0 after 3 s when ACA is active.
-      </p>
     </div>
   </section>
 
@@ -185,8 +140,8 @@
       <div class="stat"><div class="k">921</div><div class="v" id="s_921">—</div></div>
       <div class="stat"><div class="k">1016</div><div class="v" id="s_1016">—</div></div>
       <div class="stat"><div class="k">1021 mux1</div><div class="v" id="s_rx">—</div></div>
-      <div class="stat"><div class="k">TX Summon ok</div><div class="v ok" id="s_ok">—</div></div>
-      <div class="stat"><div class="k">TX Summon fail</div><div class="v" id="s_fail">—</div></div>
+      <div class="stat"><div class="k">TX ok</div><div class="v ok" id="s_ok">—</div></div>
+      <div class="stat"><div class="k">TX fail</div><div class="v" id="s_fail">—</div></div>
       <div class="stat"><div class="k">Uptime</div><div class="v" id="s_up">—</div></div>
     </div>
   </section>
@@ -249,13 +204,11 @@ function onConnected(name) {
   $('conn_pill').className = 'pill ok';
   $('btn_connect').textContent = 'Connected';
   // Afficher tous les panels
-  ['ctrl_panel','ap_panel','gate_panel','disc_panel','stats_panel'].forEach(id => {
+  ['ctrl_panel','gate_panel','disc_panel','stats_panel'].forEach(id => {
     $(id).style.display = 'block';
   });
-  $('btn_en').disabled     = false;
-  $('btn_dis').disabled    = false;
-  $('btn_ap_en').disabled  = false;
-  $('btn_ap_dis').disabled = false;
+  $('btn_en').disabled  = false;
+  $('btn_dis').disabled = false;
 }
 
 function onDisconnected() {
@@ -264,10 +217,8 @@ function onDisconnected() {
   $('conn_pill').className = 'pill bad';
   $('btn_connect').textContent = 'Connect via Bluetooth';
   $('btn_connect').disabled = false;
-  $('btn_en').disabled     = true;
-  $('btn_dis').disabled    = true;
-  $('btn_ap_en').disabled  = true;
-  $('btn_ap_dis').disabled = true;
+  $('btn_en').disabled  = true;
+  $('btn_dis').disabled = true;
   $('big').textContent = '—';
   $('big').className = 'big';
   $('gate_bar').textContent = '—';
@@ -275,16 +226,6 @@ function onDisconnected() {
 }
 
 // ── Envoi commande ──────────────────────────────────────────────
-// AP unlock uses a separate BLE characteristic — for simplicity we reuse
-// the same CTRL char with a prefixed value: "ap:1" / "ap:0"
-async function sendAPCtrl(val) {
-  if (!ctrlChar) return;
-  try {
-    const enc = new TextEncoder();
-    await ctrlChar.writeValue(enc.encode('ap:' + val));
-  } catch(e) { console.error('sendAPCtrl:', e); }
-}
-
 async function sendCtrl(val) {
   if (!ctrlChar) return;
   try {
@@ -308,37 +249,10 @@ function applyStats(s) {
   big.textContent = s.enabled ? 'ON' : 'OFF';
   big.className   = 'big ' + (s.enabled ? 'on' : 'off');
 
-  // AP EU Unlock
-  if (s.apUnlock !== undefined) {
-    const apEn = $('ap_en_v');
-    apEn.textContent = s.apUnlock ? 'ON' : 'OFF';
-    apEn.className   = 'v ' + (s.apUnlock ? 'ok' : 'bad');
-    const apWin = $('ap_win_v');
-    apWin.textContent = s.apActive ? 'OPEN' : 'closed';
-    apWin.className   = 'v ' + (s.apActive ? 'ok' : '');
-  }
-
-  // Autopilot State — DI_autonomyControlActive (ACA)
-  {
-    const aca = s.aca;
-    $('ap_label').textContent = aca ? 'ACTIVE' : 'INACTIVE';
-    $('ap_state_box').className = 'ap-state ' + (aca ? 'active' : '');
-  }
-  // AP EU Unlock
-  {
-    const apEn = $('ap_en_v');
-    apEn.textContent = s.apUnlock ? 'ON' : 'OFF';
-    apEn.className   = 'v ' + (s.apUnlock ? 'ok' : 'bad');
-    const apWin = $('ap_win_v');
-    apWin.textContent = s.apActive ? 'OPEN' : 'closed';
-    apWin.className   = 'v ' + (s.apActive ? 'ok' : '');
-    $('ap_tx_ok').textContent = s.txApOk ?? '—';
-  }
-
   // Gate
   const gate = s.gate;
   const gb = $('gate_bar');
-  gb.textContent = gate ? 'OPEN — injection autorisée' : 'CLOSED — injection bloquée';
+  gb.textContent = gate ? 'OPEN — injection allowed' : 'CLOSED — injection blocked';
   gb.className   = 'gate-bar ' + (gate ? 'open' : 'closed');
 
   const setGbox = (id, active, val) => {
