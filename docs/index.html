@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SummonUnlock — BLE V3</title>
+<title>SummonUnlock — BLE</title>
 <style>
   :root {
     --bg:#0d1117; --panel:#161b22; --line:#30363d; --txt:#c9d1d9;
@@ -79,7 +79,7 @@
 </head>
 <body>
 <header>
-  <h1>SummonUnlock v3</h1>
+  <h1>SummonUnlock</h1>
   <span class="pill" id="conn_pill">disconnected</span>
 </header>
 <main>
@@ -132,7 +132,18 @@
     <h2>Autopilot State</h2>
     <div class="ap-state" id="ap_state_box">
       <div class="ap-label" id="ap_label">—</div>
-      <div class="ap-raw"  id="ap_raw">CAN 0x39B · byte 1 · value —</div>
+      <div class="ap-raw">DI_autonomyControlActive · CAN 280 · data[6] bit 2</div>
+    </div>
+    <div style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px">AP EU Unlock</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="stat"><div class="k">Enabled</div><div class="v" id="ap_en_v">—</div></div>
+        <div class="stat"><div class="k">Window</div><div class="v" id="ap_win_v">—</div></div>
+        <div class="stat"><div class="k">TX ok</div><div class="v ok" id="ap_tx_ok">—</div></div>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin:8px 0 0">
+        Injects <code>bit 19 → 0</code> on CAN 1021 mux 0 after 3 s when ACA is active.
+      </p>
     </div>
   </section>
 
@@ -174,8 +185,8 @@
       <div class="stat"><div class="k">921</div><div class="v" id="s_921">—</div></div>
       <div class="stat"><div class="k">1016</div><div class="v" id="s_1016">—</div></div>
       <div class="stat"><div class="k">1021 mux1</div><div class="v" id="s_rx">—</div></div>
-      <div class="stat"><div class="k">TX ok</div><div class="v ok" id="s_ok">—</div></div>
-      <div class="stat"><div class="k">TX fail</div><div class="v" id="s_fail">—</div></div>
+      <div class="stat"><div class="k">TX Summon ok</div><div class="v ok" id="s_ok">—</div></div>
+      <div class="stat"><div class="k">TX Summon fail</div><div class="v" id="s_fail">—</div></div>
       <div class="stat"><div class="k">Uptime</div><div class="v" id="s_up">—</div></div>
     </div>
   </section>
@@ -307,21 +318,21 @@ function applyStats(s) {
     apWin.className   = 'v ' + (s.apActive ? 'ok' : '');
   }
 
-  // Autopilot State
-  if (s.apLabel !== undefined) {
-    $('ap_label').textContent = s.apLabel;
-    $('ap_raw').textContent   = 'CAN 0x39B · byte 1 · 0x' +
-      s.apState.toString(16).toUpperCase().padStart(2,'0');
-    const box = $('ap_state_box');
-    const l = s.apLabel;
-    if (l === 'ACTIVE_NOMINAL' || l === 'ACTIVE_NAV')
-      box.className = 'ap-state active';
-    else if (l === 'ACTIVE_RESTRICTED' || l === 'ABORTING')
-      box.className = 'ap-state restricted';
-    else if (l === 'FAULT' || l === 'ABORTED')
-      box.className = 'ap-state fault';
-    else
-      box.className = 'ap-state';
+  // Autopilot State — DI_autonomyControlActive (ACA)
+  {
+    const aca = s.aca;
+    $('ap_label').textContent = aca ? 'ACTIVE' : 'INACTIVE';
+    $('ap_state_box').className = 'ap-state ' + (aca ? 'active' : '');
+  }
+  // AP EU Unlock
+  {
+    const apEn = $('ap_en_v');
+    apEn.textContent = s.apUnlock ? 'ON' : 'OFF';
+    apEn.className   = 'v ' + (s.apUnlock ? 'ok' : 'bad');
+    const apWin = $('ap_win_v');
+    apWin.textContent = s.apActive ? 'OPEN' : 'closed';
+    apWin.className   = 'v ' + (s.apActive ? 'ok' : '');
+    $('ap_tx_ok').textContent = s.txApOk ?? '—';
   }
 
   // Gate
