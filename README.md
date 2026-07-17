@@ -1,5 +1,4 @@
-# Summon EU Unlock 
-inspired by nicolozak Nag-killer & ev-open-can-tools
+# EU Summon Unlock 
 
 > **Research / educational project — not for use on public roads.**
 
@@ -168,11 +167,6 @@ summon_unlock/
 
 ---
 
-## Future Update
-
-- Add "EU bypass torque limits in autopilot" functionality
-
----
 
 ## My Discord server: 
 https://discord.gg/9t5pMuts3
