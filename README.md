@@ -168,5 +168,5 @@ summon_unlock/
 ---
 
 
-## My Discord server: 
+## Discord server: 
 https://discord.gg/9t5pMuts3
