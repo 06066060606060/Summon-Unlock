@@ -32,6 +32,7 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include "index_html.h"
 
 // ═══════════════════════════════════════════════════════════════
 // HELPERS CAN
