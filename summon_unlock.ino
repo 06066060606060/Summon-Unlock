@@ -1,27 +1,9 @@
-/*
- * SummonUnlock — Arduino IDE (ESP32 + TWAI natif)
- *
- * Logique complète portée depuis handlers.h :
- *  - Injection gate  : Parked || Summoning
- *  - Détection ACA   : CAN 280  bit 50  (DI_autonomyControlActive)
- *  - Détection SPR   : CAN 1016 data[3] bits 4-7 (UI_selfParkRequest)
- *  - Gear Parked     : CAN 280  (DI_gear) + CAN 390 (DIF_gear)
- *  - Inject mux 1    : CAN 1021, bit 19→0, bit 47→1  (HW4)
- *
- * Connectivité :
- *  - Wi-Fi AP   : dashboard HTML complet  → http://192.168.4.1
- *  - BLE GATT   : contrôle depuis Web Bluetooth (Chrome Android / page GitHub Pages)
- *
- * BLE UUIDs :
- *  Service  : 12345678-1234-1234-1234-123456789abc
- *  CTRL     : 12345678-1234-1234-1234-123456789001  (write  : "1"=enable "0"=disable)
- *  STATS    : 12345678-1234-1234-1234-123456789002  (notify : JSON stats ~1s)
- *
- * ── Pins ──────────────────────────────────────────
- * Modifier selon ton câblage :
- */
+
 #define CAN_TX_PIN  5
 #define CAN_RX_PIN  6
+
+// Active CAN log → serial port (CSV)
+#define CAN_SERIAL_LOG 1
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -267,10 +249,40 @@ static void injectSummon(const twai_message_t &src) {
 
 static const uint32_t WATCH_IDS[] = {280, 390, 921, 1016, 1021};
 
+#if CAN_SERIAL_LOG
+// ── Log CAN → port série ───────────────────────────────────────
+// Format : timestamp_ms;id;extended;rtr;dlc;data
+// Exemple : 1523;0x1A0;0;0;8;12 3A FF 00 00 00 07 E1
+static void logCanFrame(const twai_message_t &f) {
+    char line[96];
+    size_t n = 0;
+
+    n += snprintf(line + n, sizeof(line) - n, "%lu;0x%lX;%d;%d;%d;",
+                  (unsigned long)millis(),
+                  (unsigned long)f.identifier,
+                  f.extd ? 1 : 0,
+                  f.rtr  ? 1 : 0,
+                  (int)f.data_length_code);
+
+    // RTR (requête, pas de données) → champ data vide
+    if (!f.rtr) {
+        for (int i = 0; i < f.data_length_code && i < 8 && n < sizeof(line) - 4; i++) {
+            n += snprintf(line + n, sizeof(line) - n, "%02X%s",
+                          f.data[i], (i < f.data_length_code - 1) ? " " : "");
+        }
+    }
+
+    Serial.println(line);
+}
+#endif
+
 static void canTask(void *arg) {
     for (;;) {
         twai_message_t f;
         while (twai_receive(&f, pdMS_TO_TICKS(2)) == ESP_OK) {
+#if CAN_SERIAL_LOG
+            logCanFrame(f);   // journalise TOUTES les trames reçues sur le bus
+#endif
             switch (f.identifier) {
                 case 280:
                     if (f.data_length_code >= 7) handle280(f.data);
@@ -331,11 +343,11 @@ static volatile bool      bleConnected = false;
 class BleServerCb : public BLEServerCallbacks {
     void onConnect(BLEServer *)    override {
         bleConnected = true;
-        Serial.println("[BLE] Client connecté");
+        //Serial.println("[BLE] Client connecté");
     }
     void onDisconnect(BLEServer *s) override {
         bleConnected = false;
-        Serial.println("[BLE] Client déconnecté — re-advertising");
+        //Serial.println("[BLE] Client déconnecté — re-advertising");
         s->startAdvertising();
     }
 };
@@ -349,7 +361,7 @@ class BleCtrlCb : public BLECharacteristicCallbacks {
         summonEnabled = next;
         portEXIT_CRITICAL(&stateMux);
         cfgSave();
-        Serial.printf("[BLE] summonEnabled → %s\n", next ? "true" : "false");
+        //Serial.printf("[BLE] summonEnabled → %s\n", next ? "true" : "false");
     }
 };
 
@@ -381,7 +393,7 @@ static void bleSetup() {
     adv->setScanResponse(true);
     adv->setMinPreferred(0x06);
     BLEDevice::startAdvertising();
-    Serial.println("[BLE] Advertising — SummonUnlock");
+    //Serial.println("[BLE] Advertising — SummonUnlock");
 }
 
 // Tâche BLE : envoie le JSON stats toutes les secondes si un client est connecté
@@ -480,8 +492,8 @@ static void webTask(void *arg) {
     char ssid[28];
     snprintf(ssid, sizeof(ssid), "SummonUnlock-%02X%02X", mac[4], mac[5]);
     WiFi.softAP(ssid, "summon1234");
-    Serial.printf("[WIFI] SSID=%s  PASS=summon1234  IP=%s\n",
-                  ssid, WiFi.softAPIP().toString().c_str());
+    //Serial.printf("[WIFI] SSID=%s  PASS=summon1234  IP=%s\n",
+    //              ssid, WiFi.softAPIP().toString().c_str());
 
     server.on("/",            HTTP_GET,  httpRoot);
     server.on("/api/stats",   HTTP_GET,  httpStats);
@@ -499,7 +511,7 @@ void setup() {
     bootTime = millis();
     Serial.begin(115200);
     delay(500);
-    Serial.printf("IDF: %s\n", esp_get_idf_version());
+    //Serial.printf("IDF: %s\n", esp_get_idf_version());
 
     cfgLoad();
 
@@ -510,14 +522,16 @@ void setup() {
     twai_timing_config_t t = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
-    Serial.printf("twai_install=%d  twai_start=%d\n",
-                  (int)twai_driver_install(&g, &t, &f),
-                  (int)twai_start());
+    twai_driver_install(&g, &t, &f);
+    twai_start();
 
-    Serial.println("=== SummonUnlock ready ===");
-    Serial.println("  Injection gate : Parked || Summoning");
-    Serial.println("  CAN 1021 mux1  : bit19->0, bit47->1");
-    Serial.printf ("  summonEnabled  : %s\n", summonEnabled ? "true" : "false");
+    //Serial.println("=== SummonUnlock ready ===");
+    //Serial.println("  Injection gate : Parked || Summoning");
+    //Serial.println("  CAN 1021 mux1  : bit19->0, bit47->1");
+    //Serial.printf ("  summonEnabled  : %s\n", summonEnabled ? "true" : "false");
+#if CAN_SERIAL_LOG
+    Serial.println("timestamp_ms;id;extended;rtr;dlc;data");
+#endif
 
     xTaskCreatePinnedToCore(canTask, "can", 4096,  nullptr, 5, nullptr, 1);
     xTaskCreatePinnedToCore(webTask, "web", 8192,  nullptr, 1, nullptr, 0);
