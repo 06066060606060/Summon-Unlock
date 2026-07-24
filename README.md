@@ -1,4 +1,4 @@
-# EU Summon Unlock  WITH SERIAL CAN LOGGING  
+# EU Summon Unlock with serial can logging
 -Added CAN bus serial logging support (csv)  
 -CSV output on the serial port can be interpreted using my [script](https://github.com/06066060606060/ESP32_CAN_BUS_Sniffer) & viewer.
   
