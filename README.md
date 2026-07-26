@@ -54,7 +54,7 @@ Summoning = lastACA && sprSeen
 - Wired inline on the chassis CAN bus — typically at the OBD-II port or X179 connector (tested on model Y HW4 Pin 13 & 14)
 
 ```
-Vehicle CAN bus
+Chassis CAN bus
     ├── CAN H ──┬── [Transceiver] ── ESP32 TX/RX
     └── CAN L ──┘
 ```
