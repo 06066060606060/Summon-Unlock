@@ -51,7 +51,7 @@ Summoning = lastACA && sprSeen
 
 - **ESP32** (any variant with TWAI/CAN peripheral)
 - CAN transceiver (e.g. SN65HVD230, MCP2562)
-- Wired inline on the vehicle CAN bus — typically at the OBD-II port or X179 connector (tested on model Y HW4 Pin 13 & 14)
+- Wired inline on the chassis CAN bus — typically at the OBD-II port or X179 connector (tested on model Y HW4 Pin 13 & 14)
 
 ```
 Vehicle CAN bus
