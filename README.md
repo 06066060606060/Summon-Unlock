@@ -157,6 +157,12 @@ summon_unlock/
 └── index_html.ino      # Dashboard HTML served from PROGMEM
 ```
 
+## Variant
+-  EU Summon Unlock with serial can logging
+https://github.com/06066060606060/Summon-Unlock/tree/can-log-serial
+-  Nag-killer & EU-Summon-Unlock for LilyGO/T-2Can
+https://github.com/06066060606060/nag-killer/tree/t2can-test
+
 ---
 
 ## Safety notes
