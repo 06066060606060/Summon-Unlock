@@ -55,19 +55,12 @@ Summoning = lastACA && sprSeen
 - CAN transceiver (e.g. SN65HVD230, MCP2562)
 - Wired inline on the chassis CAN bus — typically at the OBD-II port or X179 connector (tested on model Y HW4 Pin 13 & 14)
 
-```
-Chassis CAN bus
-    ├── CAN H ──┬── [Transceiver] ── ESP32 TX/RX
-    └── CAN L ──┘
-```
-
 ### Pin defaults (Atom S3 lite with can base)
 
 ```cpp
 #define CAN_TX_PIN  5
 #define CAN_RX_PIN  6
 ```
-
 Change these in `summon_unlock.ino` to match your wiring.
 
 ---
@@ -81,15 +74,10 @@ The ESP32 exposes a BLE GATT server alongside the existing Wi-Fi AP. Both run si
 Usage:
 
 1- Open the GitHub Pages URL https://06066060606060.github.io/Summon-Unlock/ in Chrome on Android
-
 2- Tap Connect via Bluetooth
-
 3- Select SummonUnlock from the device picker
-
 4- Use the Enable / Disable buttons to control injection
-
 5- All gate flags and CAN counters update in real time via BLE notify
-
 - The BLE device name is always SummonUnlock regardless of MAC address, making it easy to identify in the picker
 
 
@@ -136,27 +124,9 @@ POST /api/disable  → disable injection, persist to NVS
 
 ---
 
-## Serial output
+## Know Bug
+- can state displaying "recovering" even if everything is working correctly
 
-```
-IDF: v5.x.x
-twai_install=0  twai_start=0
-=== SummonUnlock ready ===
-  Injection gate : Parked || Summoning
-  CAN 1021 mux1  : bit19->0, bit47->1
-  summonEnabled  : true
-[WIFI] SSID=SummonUnlock-AABB  PASS=summon1234  IP=192.168.4.1
-```
-
----
-
-## Project structure
-
-```
-summon_unlock/
-├── summon_unlock.ino   # Main logic — TWAI, gate, injection, Wi-Fi
-└── index_html.ino      # Dashboard HTML served from PROGMEM
-```
 
 ## Variant
 -  EU Summon Unlock with serial can logging
