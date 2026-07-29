@@ -8,6 +8,9 @@ Confirmed working on 2024 Model Y HW4 firmware 2026.20.6.1
 
 ---
 
+## What This Update Changes
+- New dashboard design
+
 ## How it works
 
 Injection only occurs when at least one of the following conditions is true:
@@ -145,7 +148,9 @@ https://github.com/06066060606060/nag-killer/tree/t2can-test
 
 ---
 
-<img width="486" height="982" alt="summon" src="https://github.com/user-attachments/assets/51be015d-c0be-486b-b953-d381bee6928e" />
+<img width="460" height="1103" alt="summon" src="https://github.com/user-attachments/assets/d8c8b306-8155-48e1-bacd-6af79aef1c88" />
+
+
 
 ## Discord server: 
 https://discord.gg/9t5pMuts3
