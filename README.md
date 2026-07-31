@@ -8,8 +8,9 @@
 
 
 ## What This Update Changes
-- bypass EU restriction in Autopilot.(no confirmation needed to exit with EAP).
+- bypass R79 EU restriction in Autopilot. (no confirmation needed to exit with EAP).
 - smoother braking
+- faster lane change
 
 ## Future Update
 - redesign BLE dashboard
