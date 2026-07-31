@@ -185,7 +185,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 </head>
 <body>
 <header>
-  <h1>EU Summon Unlock</h1>
+  <h1>EU Summon Unlock V2</h1>
   <span class="pill" id="conn">connecting…</span>
 </header>
 <main>
