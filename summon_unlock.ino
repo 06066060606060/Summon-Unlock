@@ -1,9 +1,3 @@
-//UPDATE V2.0
-// - bypass EU restriction in Autopilot (EAP).  (no confirmation needed to exit).
-// - smoother braking
-
-
-
 #define CAN_TX_PIN       5
 #define CAN_RX_PIN       6
 
@@ -12,11 +6,8 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <Preferences.h>
+#include <Update.h>
 #include "driver/twai.h"
-#include <BLEDevice.h>
-#include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
 #include "index_html.h"
 
 static volatile bool forceMode = false;
@@ -297,86 +288,20 @@ static void canTask(void *arg) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// BLE GATT
-// ═══════════════════════════════════════════════════════════════
-
-#define BLE_SERVICE_UUID   "12345678-1234-1234-1234-123456789abc"
-#define BLE_CHAR_CTRL_UUID "12345678-1234-1234-1234-123456789001"
-#define BLE_CHAR_STAT_UUID "12345678-1234-1234-1234-123456789002"
-
-static BLECharacteristic *bleStatChar = nullptr;
-static volatile bool      bleConnected = false;
-
-class BleServerCb : public BLEServerCallbacks {
-    void onConnect(BLEServer *)    override {
-        bleConnected = true;
-        Serial.println("[BLE] Client connecté");
-    }
-    void onDisconnect(BLEServer *s) override {
-        bleConnected = false;
-        Serial.println("[BLE] Client déconnecté — re-advertising");
-        s->startAdvertising();
-    }
-};
-
-class BleCtrlCb : public BLECharacteristicCallbacks {
-    void onWrite(BLECharacteristic *c) override {
-        String val = c->getValue().c_str();
-        bool next = (val == "1" || val == "true" || val == "on");
-        portENTER_CRITICAL(&stateMux);
-        summonEnabled = next;
-        portEXIT_CRITICAL(&stateMux);
-        cfgSave();
-        Serial.printf("[BLE] summonEnabled → %s\n", next ? "true" : "false");
-    }
-};
-
-static void bleSetup() {
-    BLEDevice::init("SummonUnlock");
-    BLEServer *srv = BLEDevice::createServer();
-    srv->setCallbacks(new BleServerCb());
-
-    BLEService *svc = srv->createService(BLE_SERVICE_UUID);
-
-    BLECharacteristic *ctrlChar = svc->createCharacteristic(
-        BLE_CHAR_CTRL_UUID,
-        BLECharacteristic::PROPERTY_WRITE
-    );
-    ctrlChar->setCallbacks(new BleCtrlCb());
-
-    bleStatChar = svc->createCharacteristic(
-        BLE_CHAR_STAT_UUID,
-        BLECharacteristic::PROPERTY_NOTIFY | BLECharacteristic::PROPERTY_READ
-    );
-    bleStatChar->addDescriptor(new BLE2902());
-
-    svc->start();
-
-    BLEAdvertising *adv = BLEDevice::getAdvertising();
-    adv->addServiceUUID(BLE_SERVICE_UUID);
-    adv->setScanResponse(true);
-    adv->setMinPreferred(0x06);
-    BLEDevice::startAdvertising();
-    Serial.println("[BLE] Advertising — SummonUnlock");
-}
-
-static void bleTask(void *arg) {
-    for (;;) {
-        if (bleConnected && bleStatChar) {
-            String j = statsToJson();
-            bleStatChar->setValue(j.c_str());
-            bleStatChar->notify();
-        }
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════
 // DASHBOARD WI-FI
 // ═══════════════════════════════════════════════════════════════
 
 extern const char INDEX_HTML[] PROGMEM;
 static WebServer server(80);
+
+#define FW_VERSION "V2.1"
+
+static volatile bool     otaInProgress = false;
+static volatile bool     otaSuccess    = false;
+static volatile bool     otaError      = false;
+static volatile uint32_t otaBytes      = 0;
+static volatile uint32_t otaTotal      = 0;
+static char              otaErrMsg[64] = "";
 
 static void cfgLoad() {
     prefs.begin("summon", true);
@@ -435,6 +360,14 @@ static String statsToJson() {
     s += ",\"rx1016\":"  + String(r1016);
     s += ",\"canState\":" + String((int)st.state);
     s += ",\"uptimeS\":"  + String((millis() - bootTime) / 1000);
+    s += ",\"fwVersion\":\"" + String(FW_VERSION) + "\"";
+    s += ",\"otaInProgress\":" + String(otaInProgress ? "true" : "false");
+    s += ",\"otaSuccess\":"    + String(otaSuccess    ? "true" : "false");
+    s += ",\"otaError\":"      + String(otaError      ? "true" : "false");
+    s += ",\"otaErrMsg\":\""   + String(otaErrMsg) + "\"";
+    s += ",\"otaBytes\":"      + String(otaBytes);
+    s += ",\"otaTotal\":"      + String(otaTotal);
+    s += ",\"freeHeap\":"      + String(ESP.getFreeHeap());
     s += "}";
     return s;
 }
@@ -477,6 +410,63 @@ static void httpForceMode() {
     server.send(200, "application/json", statsToJson());
 }
 
+// ─── OTA update ─────────────────────────────────────────────
+
+static void httpOtaUpload() {
+    HTTPUpload &up = server.upload();
+
+    if (up.status == UPLOAD_FILE_START) {
+        otaInProgress = true;
+        otaSuccess    = false;
+        otaError      = false;
+        otaBytes      = 0;
+        otaErrMsg[0]  = '\0';
+        Serial.printf("[OTA] Start: %s\n", up.filename.c_str());
+
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            otaError = true;
+            strncpy(otaErrMsg, Update.errorString(), sizeof(otaErrMsg) - 1);
+            Serial.printf("[OTA] begin() failed: %s\n", otaErrMsg);
+        }
+    } else if (up.status == UPLOAD_FILE_WRITE) {
+        if (!otaError && Update.write(up.buf, up.currentSize) != up.currentSize) {
+            otaError = true;
+            strncpy(otaErrMsg, Update.errorString(), sizeof(otaErrMsg) - 1);
+            Serial.printf("[OTA] write() failed: %s\n", otaErrMsg);
+        }
+        otaBytes += up.currentSize;
+    } else if (up.status == UPLOAD_FILE_END) {
+        if (!otaError && Update.end(true)) {
+            otaSuccess = true;
+            otaTotal   = otaBytes;
+            Serial.printf("[OTA] Success: %u bytes\n", up.totalSize);
+        } else if (!otaError) {
+            otaError = true;
+            strncpy(otaErrMsg, Update.errorString(), sizeof(otaErrMsg) - 1);
+            Serial.printf("[OTA] end() failed: %s\n", otaErrMsg);
+        }
+        otaInProgress = false;
+    } else if (up.status == UPLOAD_FILE_ABORTED) {
+        Update.end();
+        otaInProgress = false;
+        otaError      = true;
+        strncpy(otaErrMsg, "aborted", sizeof(otaErrMsg) - 1);
+        Serial.println("[OTA] Aborted");
+    }
+}
+
+static void httpOtaFinish() {
+    bool ok = otaSuccess && !otaError;
+    String resp = String("{\"ok\":") + (ok ? "true" : "false") +
+                  ",\"error\":\"" + String(otaErrMsg) + "\"}";
+    server.sendHeader("Connection", "close");
+    server.send(200, "application/json", resp);
+    if (ok) {
+        delay(700);
+        ESP.restart();
+    }
+}
+
 static void webTask(void *arg) {
     WiFi.mode(WIFI_AP);
     uint8_t mac[6]; WiFi.softAPmacAddress(mac);
@@ -492,6 +482,7 @@ static void webTask(void *arg) {
     server.on("/api/disable", HTTP_POST, httpDisable);
     server.on("/api/force",   HTTP_POST, httpForce);
     server.on("/api/forcemode", HTTP_POST, httpForceMode);
+    server.on("/update", HTTP_POST, httpOtaFinish, httpOtaUpload);
     server.begin();
     for (;;) { server.handleClient(); vTaskDelay(1); }
 }
@@ -528,9 +519,6 @@ void setup() {
 
     xTaskCreatePinnedToCore(canTask, "can", 4096,  nullptr, 5, nullptr, 1);
     xTaskCreatePinnedToCore(webTask, "web", 8192,  nullptr, 1, nullptr, 0);
-
-    bleSetup();
-    xTaskCreatePinnedToCore(bleTask, "ble", 4096,  nullptr, 1, nullptr, 0);
 }
 
 void loop() {
