@@ -3,7 +3,7 @@
 
 > **Research / educational project — not for use on public roads.**
 
-ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot (EAP) by intercepting and modifying a single CAN frame on the vehicle bus.    
+ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot by intercepting and modifying a single CAN frame on the vehicle bus.    
 Confirmed working on 2024 Model Y HW4 firmware 2026.20.6.1
 
 ---
