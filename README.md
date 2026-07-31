@@ -77,7 +77,7 @@ Usage:
 5- All gate flags and CAN counters update in real time via BLE notify
 - The BLE device name is always SummonUnlock regardless of MAC address, making it easy to identify in the picker
 
-
+---  
 ## Wi-Fi Dashboard
 
 After boot the ESP32 creates a Wi-Fi access point:
@@ -87,15 +87,14 @@ After boot the ESP32 creates a Wi-Fi access point:
 | SSID | `SummonUnlock-XXYY` (last 2 bytes of MAC) |
 | Password | `summon1234` |
 | Dashboard | [http://192.168.4.1](http://192.168.4.1) |
-
+  
+  ---  
 ### Dashboard panels
 
 **Summon Unlock** — master enable/disable toggle, persisted to NVS across reboots.
 
 **Injection Gate** — real-time state of `Parked` and `Summoning` flags.  
 `APActive` (from CAN 921).
-
-**Summon / TACC discrimination** — live view of `ACA` and `SPR` signals used to distinguish Smart Summon from plain TACC.
 
 **CAN Frames** — per-ID receive counters (280, 390, 921, 1016, 1021 mux1), TX ok/fail, bus state, uptime.
 
@@ -121,14 +120,16 @@ POST /api/disable  → disable injection, persist to NVS
 
 ---
 
-## Know Bug
-- can state displaying "recovering" even if everything is working correctly
-
-
+## Flash using arduino IDE
+If you encounter a compilation error (Sketch too big), change the partition Scheme with 2MB SPIFFS.
+- Open Tools > Partition Scheme.
+- Pick the layout that matches your project needs.
+- Recompile and upload the sketch
+---  
 ## Variant
--  EU Summon Unlock with serial can logging
+-  EU Summon Unlock V1 with serial can logging
 https://github.com/06066060606060/Summon-Unlock/tree/can-log-serial
--  Nag-killer & EU-Summon-Unlock for LilyGO/T-2Can
+-  Nag-killer & EU-Summon-Unlock V1 for LilyGO/T-2Can
 https://github.com/06066060606060/nag-killer/tree/t2can-test
 
 ---
