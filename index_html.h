@@ -158,6 +158,11 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     color: var(--bad);
     border-color: #3a1f23;
   }
+  button.warn {
+    background: var(--warn);
+    color: #000;
+    border-color: transparent;
+  }
   .desc {
     font-size: 12px;
     color: var(--muted);
@@ -180,13 +185,13 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 </head>
 <body>
 <header>
-  <h1>EU Summon Unlock</h1>
+  <h1>EU Summon Unlock V2</h1>
   <span class="pill" id="conn">connecting…</span>
 </header>
 <main>
 
   <section class="panel">
-    <h2>Summon Unlock</h2>
+    <h2>Summon Unlock V2</h2>
     <div class="stat full" style="min-height:auto;padding:16px 14px;">
       <div class="k">State</div>
       <div class="v" id="big">OFF</div>
@@ -194,6 +199,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     <div class="tbar">
       <button class="primary" onclick="post('/api/enable')">Enable</button>
       <button class="danger" onclick="post('/api/disable')">Disable</button>
+      <button class="warn" id="btnForceMode">AP injection</button>
     </div>
   </section>
 
@@ -211,6 +217,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     </div>
   </section>
 
+
   <section class="panel">
     <h2>Live</h2>
     <div class="row">
@@ -222,6 +229,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
       <div class="stat"><div class="k">TX ok</div><div class="v ok" id="s_ok">0</div></div>
       <div class="stat"><div class="k">TX fail</div><div class="v" id="s_fail">0</div></div>
       <div class="stat"><div class="k">CAN bus</div><div class="v" id="s_can">running</div></div>
+      <div class="stat"><div class="k">Last 1021</div><div class="v" id="s_l1021">no</div></div>
       <div class="stat full"><div class="k">Uptime</div><div class="v" id="s_up">0 s</div></div>
     </div>
   </section>
@@ -240,10 +248,22 @@ async function fetchStats() {
   try {
     const s = await fetch('/api/stats').then(r => r.json());
 
-    // Toggle
+    // Big state
     const big = $('big');
-    big.textContent = s.enabled ? 'ON' : 'OFF';
-    big.className   = 'v ' + (s.enabled ? 'ok' : '');
+    if (s.forceMode) {
+      big.textContent = 'FORCE';
+      big.className = 'v warn';
+    } else {
+      big.textContent = s.enabled ? 'ON' : 'OFF';
+      big.className = 'v ' + (s.enabled ? 'ok' : '');
+    }
+
+    // Force mode button
+    const btnForceMode = $('btnForceMode');
+    if (btnForceMode) {
+      btnForceMode.textContent = s.forceMode ? 'AP Injection: ON' : 'AP Injection: OFF';
+      btnForceMode.style.opacity = s.forceMode ? '1' : '0.7';
+    }
 
     // Gate
     $('gate_status').textContent = s.gate ? 'OPEN' : 'CLOSED';
@@ -275,6 +295,9 @@ async function fetchStats() {
     const cs = CAN_STATES[s.canState] ?? String(s.canState);
     $('s_can').textContent = cs;
     $('s_can').className   = 'v ' + (s.canState === 0 ? 'ok' : s.canState === 2 ? 'bad' : 'warn');
+
+    $('s_l1021').textContent = s.last1021 ? 'yes' : 'no';
+    $('s_l1021').className = 'v ' + (s.last1021 ? 'ok' : 'warn');
 
     const u = s.uptimeS;
     $('s_up').textContent = u < 60 ? u + ' s' : Math.floor(u/60) + 'm' + (u%60) + 's';
