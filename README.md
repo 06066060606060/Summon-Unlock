@@ -142,7 +142,7 @@ https://github.com/06066060606060/nag-killer/tree/t2can-test
 
 ---
 
-<img width="460" height="1103" alt="summon" src="https://github.com/user-attachments/assets/d8c8b306-8155-48e1-bacd-6af79aef1c88" />
+<img width="230" height="551" alt="summon" src="https://github.com/user-attachments/assets/d8c8b306-8155-48e1-bacd-6af79aef1c88" />
 
 
 
