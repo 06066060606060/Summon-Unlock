@@ -136,7 +136,7 @@ https://github.com/06066060606060/nag-killer/tree/t2can-test
 ## Safety notes
 
 - The firmware only modifies **one frame, two bits**. It does not alter speed limits, steering, braking, or any safety-critical signal.
-- The injection gate ensures the modification is active **only when parked or during an active Summon session** — never during normal driving.
+- The injection gate ensures the modification is active **only when parked or during an active autopilot session** — never during normal driving.
 - Disable via the dashboard at any time; state is persisted to NVS.
 - **Use at your own risk. This project is for research and educational purposes only.**
 
@@ -144,6 +144,12 @@ https://github.com/06066060606060/nag-killer/tree/t2can-test
 
 <img width="230" height="551" alt="summon" src="https://github.com/user-attachments/assets/d8c8b306-8155-48e1-bacd-6af79aef1c88" />
 
+## Credits
+
+- `Ev Open Can Mod` https://github.com/ev-open-can-tools/ev-open-can-tools
+- Created by X₿mod.
+- ESP32 TWAI driver by Espressif Systems
+- Automotive CAN research community
 
 
 ## Discord server: 
