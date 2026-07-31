@@ -3,7 +3,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EU Summon Unlock</title>
+<title>EU Summon Unlock V2</title>
 <style>
   :root {
     --bg: #0d0d0d;
@@ -185,7 +185,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 </head>
 <body>
 <header>
-  <h1>EU Summon Unlock V2</h1>
+  <h1>EU Summon Unlock</h1>
   <span class="pill" id="conn">connecting…</span>
 </header>
 <main>
