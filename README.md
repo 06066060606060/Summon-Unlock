@@ -1,12 +1,11 @@
 
 # EU Summon Unlock V2.0
----
-> **Research / educational project — not for use on public roads.**
 
-ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot by intercepting and modifying a single CAN frame on the vehicle bus.    
+> ⚠️ Research / educational firmware only.  
+> ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot.   
+> This project interacts with a vehicle CAN bus. It is intended for controlled bench testing, code review, and research environments only.It sends signals directly to the controller. Do not use this on public roads or in any situation where unsafe behavior could put people or property at risk. You are responsible for your own testing, wiring, configuration, and local laws.
+--- 
 
-
----
 
 ## What This Update Changes
 - bypass EU restriction in Autopilot.(no confirmation needed to exit with EAP).
