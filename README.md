@@ -1,5 +1,5 @@
 
-# EU Summon Unlock V2.0
+# EU Summon Unlock V2.1
 
 > ⚠️ Research / educational firmware only.  
 > ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot.   
@@ -7,7 +7,11 @@
 --- 
 
 
-## What V2 Update Changes
+## What V2.1 Update Changes
+- Added OTA Update
+- Fix dashboard error
+- Removed BLE Dashboard
+---------------------------------------
 - bypass R79 EU restriction in Autopilot.
 - expanded lateral acceleration limits
 - lane changes near forks isn't disabled (EAP)
@@ -123,12 +127,12 @@ POST /api/disable  → disable injection, persist to NVS
 
 ---
 
-## Flash using arduino IDE
-If you encounter a compilation error (Sketch too big), change the partition Scheme with 2MB SPIFFS.
-- Open Tools > Partition Scheme.
-- Pick the layout that matches your project needs.
-- Recompile and upload the sketch
+## Build firmware using arduino IDE for OTA
+- Open Sketch > Export Compiled Binary.
+- Open /summon_unlock/build/ folder
+- Upload summon_unlock.ino.bin (900Ko) using the web dashboard & Update
 ---  
+
 ## Variant
 -  EU Summon Unlock V1 with serial can logging
 https://github.com/06066060606060/Summon-Unlock/tree/can-log-serial
