@@ -3,7 +3,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>EU Summon Unlock V2</title>
+<title>EU Summon Unlock</title>
 <style>
   :root {
     --bg: #0d0d0d;
@@ -181,17 +181,49 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     line-height: 1.6;
   }
   .footer a { color: var(--muted); text-decoration: none; }
+  input[type=file] {
+    width: 100%;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .progress {
+    width: 100%;
+    height: 8px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 12px;
+    display: none;
+  }
+  .progress.show { display: block; }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.15s ease;
+  }
+  .ota-msg {
+    font-size: 12px;
+    margin-top: 10px;
+    color: var(--muted);
+  }
+  .ota-msg.ok  { color: var(--ok); }
+  .ota-msg.bad { color: var(--bad); }
 </style>
 </head>
 <body>
 <header>
-  <h1>EU Summon Unlock V2</h1>
+  <h1>EU Summon Unlock <span id="hdr_ver" style="color:var(--muted);font-weight:600;">V2.1</span></h1>
   <span class="pill" id="conn">connecting…</span>
 </header>
 <main>
 
   <section class="panel">
-    <h2>Summon Unlock V2</h2>
     <div class="stat full" style="min-height:auto;padding:16px 14px;">
       <div class="k">State</div>
       <div class="v" id="big">OFF</div>
@@ -234,6 +266,22 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     </div>
   </section>
 
+  <section class="panel">
+    <h2>Firmware / OTA Update</h2>
+    <div class="row" style="margin-bottom:12px;">
+      <div class="stat"><div class="k">Version</div><div class="v" id="fw_ver">—</div></div>
+      <div class="stat"><div class="k">Free heap</div><div class="v" id="fw_free">—</div></div>
+    </div>
+    <input type="file" id="otaFile" accept=".bin">
+    <div class="tbar">
+      <button class="primary" id="btnOtaUpload" onclick="uploadOta()">Upload &amp; Flash</button>
+    </div>
+    <div class="progress" id="otaProgressWrap">
+      <div class="progress-bar" id="otaProgressBar"></div>
+    </div>
+    <div class="ota-msg" id="otaMsg">Select a compiled .bin firmware file, then upload. The device reboots automatically after a successful flash.</div>
+  </section>
+
   <div class="footer">
     <a href="/api/stats" target="_blank">/api/stats</a> ·
     research / educational only · not for use on public roads
@@ -243,8 +291,10 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 <script>
 const $ = id => document.getElementById(id);
 const CAN_STATES = ['running','running','bus-off','stopped'];
+let otaUploading = false;
 
 async function fetchStats() {
+  if (otaUploading) return;
   try {
     const s = await fetch('/api/stats').then(r => r.json());
 
@@ -276,12 +326,6 @@ async function fetchStats() {
     $('g_su_v').textContent = s.summon ? 'ON' : 'OFF';
     $('g_su_v').className = 'v ' + (s.summon ? 'ok' : '');
 
-    // Discrimination
-    $('d_aca').textContent = s.aca ? 'ACTIVE' : 'inactive';
-    $('d_aca').className = 'v ' + (s.aca ? 'ok' : '');
-    $('d_spr').textContent = s.spr ? 'SEEN' : 'not seen';
-    $('d_spr').className = 'v ' + (s.spr ? 'ok' : '');
-
     // Compteurs
     $('s_280').textContent  = s.rx280;
     $('s_390').textContent  = s.rx390;
@@ -302,12 +346,89 @@ async function fetchStats() {
     const u = s.uptimeS;
     $('s_up').textContent = u < 60 ? u + ' s' : Math.floor(u/60) + 'm' + (u%60) + 's';
 
+    if (s.fwVersion) {
+      $('fw_ver').textContent = s.fwVersion;
+      $('hdr_ver').textContent = s.fwVersion;
+    }
+    if (s.freeHeap !== undefined) $('fw_free').textContent = Math.round(s.freeHeap/1024) + ' KB';
+
     $('conn').textContent = 'connected';
     $('conn').className   = 'pill ok';
   } catch {
     $('conn').textContent = 'lost';
     $('conn').className   = 'pill bad';
   }
+}
+
+// ── OTA upload ───────────────────────────────────────────────
+function uploadOta() {
+  const input = $('otaFile');
+  const file = input.files[0];
+  const msg = $('otaMsg');
+  const wrap = $('otaProgressWrap');
+  const bar = $('otaProgressBar');
+  const btn = $('btnOtaUpload');
+
+  if (!file) {
+    msg.textContent = 'Please choose a .bin file first.';
+    msg.className = 'ota-msg bad';
+    return;
+  }
+
+  const form = new FormData();
+  form.append('update', file, file.name);
+
+  otaUploading = true;
+  btn.disabled = true;
+  input.disabled = true;
+  wrap.className = 'progress show';
+  bar.style.width = '0%';
+  msg.textContent = 'Uploading ' + file.name + '…';
+  msg.className = 'ota-msg';
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/update', true);
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      bar.style.width = pct + '%';
+      msg.textContent = 'Uploading… ' + pct + '%';
+    }
+  };
+
+  xhr.onload = () => {
+    let ok = xhr.status === 200;
+    let errText = '';
+    try {
+      const r = JSON.parse(xhr.responseText);
+      ok = ok && r.ok;
+      errText = r.error || '';
+    } catch {}
+
+    if (ok) {
+      bar.style.width = '100%';
+      msg.textContent = 'Flash successful — rebooting…';
+      msg.className = 'ota-msg ok';
+      setTimeout(() => location.reload(), 6000);
+    } else {
+      msg.textContent = 'OTA failed' + (errText ? ': ' + errText : '');
+      msg.className = 'ota-msg bad';
+      btn.disabled = false;
+      input.disabled = false;
+      otaUploading = false;
+    }
+  };
+
+  xhr.onerror = () => {
+    msg.textContent = 'Upload error — device likely rebooted or connection lost.';
+    msg.className = 'ota-msg bad';
+    btn.disabled = false;
+    input.disabled = false;
+    otaUploading = false;
+  };
+
+  xhr.send(form);
 }
 
 async function post(url) {
