@@ -1,15 +1,20 @@
 
-# EU Summon Unlock 
+# EU Summon Unlock V2.0
 
 > **Research / educational project — not for use on public roads.**
 
-ESP32 firmware that lifts the EU geographic restriction on Smart Summon by intercepting and modifying a single CAN frame on the vehicle bus.    
+ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot (EAP) by intercepting and modifying a single CAN frame on the vehicle bus.    
 Confirmed working on 2024 Model Y HW4 firmware 2026.20.6.1
 
 ---
 
 ## What This Update Changes
-- New dashboard design
+- bypass EU restriction in Autopilot (EAP).  (no confirmation needed to exit).
+- smoother braking
+
+## Future Update
+- redesign BLE dashboard
+- HardcoreSummon ?
 
 ## How it works
 
@@ -17,30 +22,17 @@ Injection only occurs when at least one of the following conditions is true:
 
 ```
 gate = Parked OR Summoning
+force = Autopilot active 
 ```
 
 | Flag | Source | Condition |
 |------|--------|-----------|
 | `Parked` | CAN 280 / 390 | Gear == P |
 | `Summoning` | CAN 280 + 1016 | `ACA == 1` AND `SPR ≠ 0` |
+  | `gateAPActive ` | CAN 921   | status == 3 ,4 ,5 ,6 |
 
-This prevents any injection while driving manually or under plain AP/TACC.
+This prevents any injection while driving manually.
 
-### Summon vs TACC discrimination
-
-`DI_autonomyControlActive` (ACA, CAN 280 bit 50) is active during AP, TACC **and** Smart Summon — it cannot be used alone.  
-`UI_selfParkRequest` (SPR, CAN 1016 data[3] bits 4–7) is non-zero only when a Summon command has been issued.
-
-```
-Summoning = lastACA && sprSeen
-```
-
-- TACC only → `ACA=1`, `SPR=0` → gate **closed**, no injection
-- Smart Summon → `ACA=1`, `SPR≠0` → gate **open**, injection active
-- ACA falling edge → `sprSeen` cleared (episode reset)
-- Gear P + ACA=0 → full reset
-
----
 
 ## Compatibility
 
@@ -99,7 +91,7 @@ After boot the ESP32 creates a Wi-Fi access point:
 **Summon Unlock** — master enable/disable toggle, persisted to NVS across reboots.
 
 **Injection Gate** — real-time state of `Parked` and `Summoning` flags.  
-`APActive` (from CAN 921) is shown as info only — it does not open the gate.
+`APActive` (from CAN 921).
 
 **Summon / TACC discrimination** — live view of `ACA` and `SPR` signals used to distinguish Smart Summon from plain TACC.
 
