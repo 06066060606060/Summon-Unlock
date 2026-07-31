@@ -7,7 +7,7 @@
 --- 
 
 
-## What This Update Changes
+## What V2 Update Changes
 - bypass R79 EU restriction in Autopilot. (no confirmation needed to exit with EAP).
 - smoother braking
 - faster lane change
