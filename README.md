@@ -1,15 +1,15 @@
 
 # EU Summon Unlock V2.0
-
+---
 > **Research / educational project — not for use on public roads.**
 
 ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot by intercepting and modifying a single CAN frame on the vehicle bus.    
-Confirmed working on 2024 Model Y HW4 firmware 2026.20.6.1
+
 
 ---
 
 ## What This Update Changes
-- bypass EU restriction in Autopilot (EAP).  (no confirmation needed to exit).
+- bypass EU restriction in Autopilot.(no confirmation needed to exit with EAP).
 - smoother braking
 
 ## Future Update
@@ -35,6 +35,7 @@ This prevents any injection while driving manually.
 
 
 ## Compatibility
+- Confirmed working on 2024 Model Y HW4 firmware 2026.26
 
 | Hardware | Tested | CAN ID | Mux | Bit 19 | Bit 47 |
 |----------|--------|--------|-----|--------|--------|
