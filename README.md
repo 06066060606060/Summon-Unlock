@@ -8,9 +8,12 @@
 
 
 ## What V2 Update Changes
-- bypass R79 EU restriction in Autopilot. (no confirmation needed to exit with EAP).
-- smoother braking
-- faster lane change
+- bypass R79 EU restriction in Autopilot.
+- expanded lateral acceleration limits
+- lane changes near forks isn't disabled (EAP)
+- instantaneous lane change on blinker (EAP)
+- no lane change timeout once initiated (EAP)
+- takes forks and exits automatically (EAP)
 
 ## Future Update
 - redesign BLE dashboard
