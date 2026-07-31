@@ -13,7 +13,8 @@
 
 ## Future Update
 - redesign BLE dashboard
-- HardcoreSummon ?
+- code cleaning
+- unified version Lilygo-t2can
 
 ## How it works
 
