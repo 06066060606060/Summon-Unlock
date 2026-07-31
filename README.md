@@ -19,11 +19,6 @@
 - no lane change timeout once initiated (EAP)
 - takes forks and exits automatically (EAP)
 
-## Future Update
-- redesign BLE dashboard
-- code cleaning
-- unified version Lilygo-t2can
-
 ## How it works
 
 Injection only occurs when at least one of the following conditions is true:
