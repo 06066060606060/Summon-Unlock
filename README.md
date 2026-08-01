@@ -140,4 +140,4 @@ https://github.com/06066060606060/nag-killer/tree/t2can-test
 
 
 ## Discord server: 
-https://discord.gg/9t5pMuts3
+https://discord.gg/euPbYG8Npc
