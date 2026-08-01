@@ -129,15 +129,19 @@ https://github.com/06066060606060/nag-killer/tree/t2can-test
 
 ---
 
-<img width="230" height="551" alt="summon" src="https://github.com/user-attachments/assets/d8c8b306-8155-48e1-bacd-6af79aef1c88" />
+## Discord server: 
+https://discord.gg/euPbYG8Npc
+
+> **Support the project:**  
+> [![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/mickymurcid)
+
 
 ## Credits
 
-- `Ev Open Can Mod` https://github.com/ev-open-can-tools/ev-open-can-tools
+- Inspired by `Ev Open Can Mod` https://github.com/ev-open-can-tools/ev-open-can-tools
 - Created by X₿mod.
 - ESP32 TWAI driver by Espressif Systems
 - Automotive CAN research community
 
+<img width="230" height="551" alt="summon" src="https://github.com/user-attachments/assets/d8c8b306-8155-48e1-bacd-6af79aef1c88" />
 
-## Discord server: 
-https://discord.gg/euPbYG8Npc
