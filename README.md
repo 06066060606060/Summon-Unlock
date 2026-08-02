@@ -115,7 +115,7 @@ POST /api/disable  → disable injection, persist to NVS
 ## Variant
 -  EU Summon Unlock V1 with serial can logging
 https://github.com/06066060606060/Summon-Unlock/tree/can-log-serial
--  Nag-killer & EU-Summon-Unlock V1 for LilyGO/T-2Can
+-  Nag-killer & EU-Summon-Unlock V2.1 for LilyGO/T-2Can
 https://github.com/06066060606060/nag-killer/tree/t2can-test
 
 ---
