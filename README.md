@@ -6,18 +6,18 @@
 > This project interacts with a vehicle CAN bus. It is intended for controlled bench testing, code review, and research environments only.It sends signals directly to the controller. Do not use this on public roads or in any situation where unsafe behavior could put people or property at risk. You are responsible for your own testing, wiring, configuration, and local laws.
 --- 
 ## What V2.3 Update Changes
-- Added a toogle in dashboard to enable TLSSC where it is not available.
----------------------------------------
-- Added OTA Update
-- Fix dashboard error
-- Removed BLE Dashboard
----------------------------------------
-- bypass R79 EU restriction in Autopilot & summon  
+- Added a toogle in dashboard to enable TLSSC where it is not available.  
+
+--------------------Update 2.2-------------------
+- bypass R79 EU restriction in AP
+- Expend summon to +/-  85m
 - expanded lateral acceleration limits
 - lane changes near forks isn't disabled (EAP)
 - instantaneous lane change on blinker (EAP)
 - no lane change timeout once initiated (EAP)
 - takes forks and exits automatically (EAP)
+- Continue on Green with Car in Front (EAP)
+- OTA Update
 
 ## How it works
 
@@ -117,7 +117,7 @@ POST /api/disable  → disable injection, persist to NVS
 https://github.com/06066060606060/Summon-Unlock/tree/can-log-serial
 - EU Summon Unlock V2.3 for banned car
  https://github.com/06066060606060/Summon-Unlock/tree/ban-version
--  Nag-killer & EU-Summon-Unlock V2.3 unified for LilyGO/T-2Can  
+-  Nag-killer & EU-Summon-Unlock unified for LilyGO/T-2Can  
 https://github.com/06066060606060/T2CAN-Nag-killer-EU-unlock
 
 ---
