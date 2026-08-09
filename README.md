@@ -1,5 +1,5 @@
 
-# EU Summon Unlock V2.3b for ban
+# EU Summon Unlock V2.3b
 
 > ⚠️ Research / educational firmware only.  
 > ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot.   
