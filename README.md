@@ -7,6 +7,7 @@
 --- 
 ## What V2.3b Update Changes
 - Added 2 toogle in dashboard to restore TLSSC for banned car.
+- Injection may trigger an MCU reboot on the car
 ---------------------------------------
 - Added OTA Update
 - Fix dashboard error
