@@ -38,14 +38,7 @@ This prevents any injection while driving manually.
 
 
 ## Compatibility
-- Confirmed working on 2024 Model Y HW4 firmware 2026.26
-
-| Hardware | Tested | CAN ID | Mux | Bit 19 | Bit 47 |
-|----------|--------|--------|-----|--------|--------|
-| HW4      | ✓      | 1021   | 1   | ✓     | ✓      |
-
-> The current firmware targets **bit 47** per the confirmed rule set. edit summon_unlock.ino setBit if needed.
-
+- Confirmed working with firmware 2026.26.1
 ---
 
 ## Hardware
