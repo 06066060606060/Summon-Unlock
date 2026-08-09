@@ -1,6 +1,6 @@
 #define CAN_TX_PIN       5
 #define CAN_RX_PIN       6
-
+#define FW_VERSION "V2.3"
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -16,6 +16,7 @@ static portMUX_TYPE stateMux = portMUX_INITIALIZER_UNLOCKED;
 
 static Preferences   prefs;
 static volatile bool summonEnabled = true;
+static volatile bool tlsscEnabled  = false;   // "Enable TLSSC" - off by default
 
 static volatile bool gateAPActive  = false;
 static volatile bool gateParked    = true;
@@ -213,6 +214,36 @@ static void doInjectSummon(const uint8_t *srcData, uint8_t dlc) {
     else               txFail++;
 }
 
+// ── TLSSC : 0x3FD mux0 bit38 -> UI_fsdStopsControlEnabled = 1 ──
+static void doInjectTLSSC(const uint8_t *srcData, uint8_t dlc) {
+    if (dlc < 8) return;
+    twai_message_t out;
+    out.identifier       = 1021;
+    out.data_length_code = 8;
+    out.flags            = 0;
+    memcpy(out.data, srcData, 8);
+
+    setBit(out.data, 38, true);   // UI_fsdStopsControlEnabled = 1
+    setBit(out.data, 39, true);    // UI_fsdContinueOnGreenWithCIPV = 1
+    esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
+    if (err == ESP_OK) txOk++;
+    else               txFail++;
+}
+
+static void injectTLSSC(const twai_message_t &src) {
+    bool en, gate, fmode;
+    portENTER_CRITICAL(&stateMux);
+    en    = tlsscEnabled;
+    gate  = injectionGateOpen();
+    fmode = forceMode;
+    portEXIT_CRITICAL(&stateMux);
+
+    if ((!en || !gate) && !fmode)
+        return;
+
+    doInjectTLSSC(src.data, src.data_length_code);
+}
+
 static void injectSummon(const twai_message_t &src) {
     bool en, gate, fmode;
     portENTER_CRITICAL(&stateMux);
@@ -255,12 +286,17 @@ static void canTask(void *arg) {
                     handle1016(f.data, f.data_length_code);
                     break;
                 case 1021:
-                    if (f.data_length_code >= 8 && readMuxID(f.data) == 1) {
-                        portENTER_CRITICAL(&stateMux);
-                        memcpy(last1021Data, f.data, 8);
-                        last1021Valid = true;
-                        portEXIT_CRITICAL(&stateMux);
-                        injectSummon(f);
+                    if (f.data_length_code >= 8) {
+                        uint8_t mux = readMuxID(f.data);
+                        if (mux == 1) {
+                            portENTER_CRITICAL(&stateMux);
+                            memcpy(last1021Data, f.data, 8);
+                            last1021Valid = true;
+                            portEXIT_CRITICAL(&stateMux);
+                            injectSummon(f);
+                        } else if (mux == 0) {
+                            injectTLSSC(f);
+                        }
                     }
                     break;
                 default:
@@ -294,7 +330,7 @@ static void canTask(void *arg) {
 extern const char INDEX_HTML[] PROGMEM;
 static WebServer server(80);
 
-#define FW_VERSION "V2.1"
+
 
 static volatile bool     otaInProgress = false;
 static volatile bool     otaSuccess    = false;
@@ -306,21 +342,24 @@ static char              otaErrMsg[64] = "";
 static void cfgLoad() {
     prefs.begin("summon", true);
     summonEnabled = prefs.getBool("en", true);
+    tlsscEnabled  = prefs.getBool("tlssc", false);
     prefs.end();
 }
 
 static void cfgSave() {
     prefs.begin("summon", false);
     prefs.putBool("en", summonEnabled);
+    prefs.putBool("tlssc", tlsscEnabled);
     prefs.end();
 }
 
 static String statsToJson() {
-    bool en, ap, parked, summon, aca, spr, fmode, l1021;
+    bool en, tlssc, ap, parked, summon, aca, spr, fmode, l1021;
     uint32_t rmx, tok, tfail, r280, r390, r921, r1016;
 
     portENTER_CRITICAL(&stateMux);
     en     = summonEnabled;
+    tlssc  = tlsscEnabled;
     ap     = gateAPActive;
     parked = gateParked;
     summon = gateSummoning;
@@ -343,6 +382,7 @@ static String statsToJson() {
 
     String s = "{";
     s += "\"enabled\":"  + String(en     ? "true" : "false");
+    s += ",\"tlssc\":"   + String(tlssc  ? "true" : "false");
     s += ",\"gate\":"    + String(gate   ? "true" : "false");
     s += ",\"ap\":"      + String(ap     ? "true" : "false");
     s += ",\"parked\":"  + String(parked ? "true" : "false");
@@ -382,6 +422,17 @@ static void httpEnable() {
 }
 static void httpDisable() {
     portENTER_CRITICAL(&stateMux); summonEnabled = false; portEXIT_CRITICAL(&stateMux);
+    cfgSave();
+    server.send(200, "application/json", statsToJson());
+}
+
+static void httpTlsscEnable() {
+    portENTER_CRITICAL(&stateMux); tlsscEnabled = true;  portEXIT_CRITICAL(&stateMux);
+    cfgSave();
+    server.send(200, "application/json", statsToJson());
+}
+static void httpTlsscDisable() {
+    portENTER_CRITICAL(&stateMux); tlsscEnabled = false; portEXIT_CRITICAL(&stateMux);
     cfgSave();
     server.send(200, "application/json", statsToJson());
 }
@@ -480,6 +531,8 @@ static void webTask(void *arg) {
     server.on("/api/stats",   HTTP_GET,  httpStats);
     server.on("/api/enable",  HTTP_POST, httpEnable);
     server.on("/api/disable", HTTP_POST, httpDisable);
+    server.on("/api/tlssc-enable",  HTTP_POST, httpTlsscEnable);
+    server.on("/api/tlssc-disable", HTTP_POST, httpTlsscDisable);
     server.on("/api/force",   HTTP_POST, httpForce);
     server.on("/api/forcemode", HTTP_POST, httpForceMode);
     server.on("/update", HTTP_POST, httpOtaFinish, httpOtaUpload);
@@ -516,6 +569,7 @@ void setup() {
     Serial.println("  Injection gate : Parked || Summoning");
     Serial.println("  CAN 1021 mux1  : bit19->0, bit47->1");
     Serial.printf ("  summonEnabled  : %s\n", summonEnabled ? "true" : "false");
+    Serial.printf ("  tlsscEnabled   : %s (0x3FD mux0 bit38)\n", tlsscEnabled ? "true" : "false");
 
     xTaskCreatePinnedToCore(canTask, "can", 4096,  nullptr, 5, nullptr, 1);
     xTaskCreatePinnedToCore(webTask, "web", 8192,  nullptr, 1, nullptr, 0);
