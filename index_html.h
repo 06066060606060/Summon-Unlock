@@ -278,8 +278,21 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     </div>
     <div class="desc">
       Injects <b>UI_fsdStopsControlEnabled = 1</b> on <b>0x3FD</b> mux0 bit38.<br>
-      and <b>UI_fsdContinueOnGreenWithCIPV = 1</b> on <b>0x3FD</b> mux0 bit39.<br>
       Off by default. Applied only while the injection gate is open.
+    </div>
+  </section>
+  <section class="panel">
+    <h2>TLSSC Restore for banned car</h2>
+    <div class="toggle-row">
+      <span class="lbl">DAS_autopilotConfig = SELF_DRIVING</span>
+      <label class="switch">
+        <input type="checkbox" id="tlrstToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="desc">
+      Rewrites <b>0x331</b> DAS_autopilotConfig (byte0 low 6 bits = 0x1B) so DAS_autopilot &amp; DAS_autopilotBase = SELF_DRIVING.<br>
+      Off by default. Applied only while the injection gate is open. May trigger an MCU reboot on the car.
     </div>
   </section>
 
@@ -403,6 +416,12 @@ async function fetchStats() {
     const tg = $('tlsscToggle');
     if (tg && document.activeElement !== tg) tg.checked = !!s.tlssc;
 
+    const gg = $('gtwsdToggle');
+    if (gg && document.activeElement !== gg) gg.checked = !!s.gtwsd;
+
+    const gr = $('tlrstToggle');
+    if (gr && document.activeElement !== gr) gr.checked = !!s.tlrst;
+
     $('conn').textContent = 'connected';
     $('conn').className   = 'pill ok';
   } catch {
@@ -489,6 +508,14 @@ async function post(url) {
 
 $('tlsscToggle').addEventListener('change', (e) => {
   post(e.target.checked ? '/api/tlssc-enable' : '/api/tlssc-disable');
+});
+
+$('gtwsdToggle').addEventListener('change', (e) => {
+  post(e.target.checked ? '/api/gtwsd-enable' : '/api/gtwsd-disable');
+});
+
+$('tlrstToggle').addEventListener('change', (e) => {
+  post(e.target.checked ? '/api/tlrst-enable' : '/api/tlrst-disable');
 });
 
 fetchStats();
