@@ -117,7 +117,7 @@ POST /api/disable  → disable injection, persist to NVS
 https://github.com/06066060606060/Summon-Unlock/tree/can-log-serial
 - EU Summon Unlock V2.3 for banned car
  https://github.com/06066060606060/Summon-Unlock/tree/ban-version
--  Nag-killer & EU-Summon-Unlock V2.3 unified for LilyGO/T-2Can
+-  Nag-killer & EU-Summon-Unlock V2.3 unified for LilyGO/T-2Can  
 https://github.com/06066060606060/T2CAN-Nag-killer-EU-unlock
 
 ---
