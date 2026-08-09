@@ -214,11 +214,43 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
   }
   .ota-msg.ok  { color: var(--ok); }
   .ota-msg.bad { color: var(--bad); }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .toggle-row .lbl { font-size: 14px; font-weight: 600; color: var(--txt); }
+  .switch { position: relative; width: 50px; height: 30px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 30px;
+    transition: 0.2s;
+  }
+  .slider::before {
+    content: "";
+    position: absolute;
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    top: 3px;
+    background: var(--txt);
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--ok); border-color: transparent; }
+  .switch input:checked + .slider::before { transform: translateX(20px); background: #000; }
 </style>
 </head>
 <body>
 <header>
-  <h1>EU Summon Unlock <span id="hdr_ver" style="color:var(--muted);font-weight:600;">V2.1</span></h1>
+  <h1>EU Summon Unlock</h1>
   <span class="pill" id="conn">connecting…</span>
 </header>
 <main>
@@ -232,6 +264,22 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
       <button class="primary" onclick="post('/api/enable')">Enable</button>
       <button class="danger" onclick="post('/api/disable')">Disable</button>
       <button class="warn" id="btnForceMode">AP injection</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Traffic Light &amp; Stop Sign Control</h2>
+    <div class="toggle-row">
+      <span class="lbl">Enable TLSSC</span>
+      <label class="switch">
+        <input type="checkbox" id="tlsscToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="desc">
+      Injects <b>UI_fsdStopsControlEnabled = 1</b> on <b>0x3FD</b> mux0 bit38.<br>
+      and <b>UI_fsdContinueOnGreenWithCIPV = 1</b> on <b>0x3FD</b> mux0 bit39.<br>
+      Off by default. Applied only while the injection gate is open.
     </div>
   </section>
 
@@ -352,6 +400,9 @@ async function fetchStats() {
     }
     if (s.freeHeap !== undefined) $('fw_free').textContent = Math.round(s.freeHeap/1024) + ' KB';
 
+    const tg = $('tlsscToggle');
+    if (tg && document.activeElement !== tg) tg.checked = !!s.tlssc;
+
     $('conn').textContent = 'connected';
     $('conn').className   = 'pill ok';
   } catch {
@@ -435,6 +486,10 @@ async function post(url) {
   await fetch(url, { method: 'POST' });
   fetchStats();
 }
+
+$('tlsscToggle').addEventListener('change', (e) => {
+  post(e.target.checked ? '/api/tlssc-enable' : '/api/tlssc-disable');
+});
 
 fetchStats();
 setInterval(fetchStats, 800);
