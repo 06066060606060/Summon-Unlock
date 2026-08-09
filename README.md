@@ -12,7 +12,7 @@
 - Fix dashboard error
 - Removed BLE Dashboard
 ---------------------------------------
-- bypass R79 EU restriction in Autopilot.
+- bypass R79 EU restriction in Autopilot & summon  
 - expanded lateral acceleration limits
 - lane changes near forks isn't disabled (EAP)
 - instantaneous lane change on blinker (EAP)
