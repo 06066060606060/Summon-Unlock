@@ -281,8 +281,9 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
       Off by default. Applied only while the injection gate is open.
     </div>
   </section>
+
   <section class="panel">
-    <h2>TLSSC Restore for banned car</h2>
+    <h2>TLSSC Restore</h2>
     <div class="toggle-row">
       <span class="lbl">DAS_autopilotConfig = SELF_DRIVING</span>
       <label class="switch">
