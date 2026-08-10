@@ -405,7 +405,7 @@ static void canTask(void *arg) {
 extern const char INDEX_HTML[] PROGMEM;
 static WebServer server(80);
 
-#define FW_VERSION "V2.1"
+#define FW_VERSION "V2.3b"
 
 static volatile bool     otaInProgress = false;
 static volatile bool     otaSuccess    = false;
