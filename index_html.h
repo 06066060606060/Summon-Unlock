@@ -250,7 +250,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
 </head>
 <body>
 <header>
-  <h1>EU Summon Unlock</h1>
+  <h1>EU Summon Unlock <span id="hdr_ver" style="color:var(--muted);font-weight:600;">V2.1</span></h1>
   <span class="pill" id="conn">connecting…</span>
 </header>
 <main>
@@ -278,6 +278,21 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     </div>
     <div class="desc">
       Injects <b>UI_fsdStopsControlEnabled = 1</b> on <b>0x3FD</b> mux0 bit38.<br>
+      Off by default. Applied only while the injection gate is open.
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>GTW Config Replay</h2>
+    <div class="toggle-row">
+      <span class="lbl">GTW_autopilot = SELF_DRIVING</span>
+      <label class="switch">
+        <input type="checkbox" id="gtwsdToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="desc">
+      Injects <b>GTW_autopilot = SELF_DRIVING (3)</b> on <b>0x7FF</b> GTW_carConfig mux2 (bit42, len3).<br>
       Off by default. Applied only while the injection gate is open.
     </div>
   </section>
