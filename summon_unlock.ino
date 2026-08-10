@@ -1,6 +1,6 @@
 #define CAN_TX_PIN       5
 #define CAN_RX_PIN       6
-#define FW_VERSION "V2.3b"
+
 
 #include <Arduino.h>
 #include <WiFi.h>
@@ -226,7 +226,7 @@ static void doInjectTLSSC(const uint8_t *srcData, uint8_t dlc) {
     memcpy(out.data, srcData, 8);
 
     setBit(out.data, 38, true);   // UI_fsdStopsControlEnabled = 1
-    setBit(out.data, 39, true);    // UI_fsdContinueOnGreenWithCIPV = 1
+
     esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
     if (err == ESP_OK) txOk++;
     else               txFail++;
@@ -405,7 +405,7 @@ static void canTask(void *arg) {
 extern const char INDEX_HTML[] PROGMEM;
 static WebServer server(80);
 
-
+#define FW_VERSION "V2.1"
 
 static volatile bool     otaInProgress = false;
 static volatile bool     otaSuccess    = false;
