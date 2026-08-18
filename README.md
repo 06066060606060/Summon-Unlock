@@ -36,6 +36,7 @@ force = Autopilot active
 
 This prevents any injection while driving manually.
 
+⚠️ Do not enable TLSSC if you do not have the EAP option.
 
 ## Compatibility
 - Confirmed working with firmware 2026.26.1
