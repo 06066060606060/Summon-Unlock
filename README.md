@@ -7,7 +7,7 @@
 --- 
 ## What V2.3 Update Changes
 - Added a toggle in dashboard to enable TLSSC where it is not available.
-- (you need a valid FSD subscription)  
+- (you need a valid EAP/FSD subscription)  
 
 --------------------Update 2.2-------------------
 - bypass R79 EU restriction in AP
@@ -108,7 +108,7 @@ POST /api/disable  → disable injection, persist to NVS
 ---  
 
 ## Variant
-- EU Summon Unlock V2.3 for banned car
+- EU Summon Unlock V2.3 TLSSC restore for banned car
  https://github.com/06066060606060/Summon-Unlock/tree/ban-version
 
 -  Nag-killer & EU-Summon-Unlock unified for LilyGO/T-2Can  
