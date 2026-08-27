@@ -40,6 +40,7 @@ This prevents any injection while driving manually.
 ⚠️ Do not enable TLSSC if you do not have the EAP option.
 
 ## Compatibility
+- AP Injection doesn't work before 2026.20
 - Confirmed working with firmware 2026.26.1
 ---
 
