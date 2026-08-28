@@ -5,7 +5,7 @@
 > ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot.   
 > This project interacts with a Tesla vehicle CAN bus. It is intended for controlled bench testing, code review, and research environments only.It sends signals directly to the controller. Do not use this on public roads or in any situation where unsafe behavior could put people or property at risk. You are responsible for your own testing, wiring, configuration, and local laws.
 --- 
-## What V2.3 Update Changes
+## What V2.4 Update Changes
 - Fixes an error that injects TLSSC even when disabled
 
 --------------------Update 2.3-------------------
