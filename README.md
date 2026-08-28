@@ -1,15 +1,16 @@
 
-# EU Summon Unlock V2.3
+# EU Summon Unlock V2.4
 
 > ⚠️ Research / educational firmware only.  
 > ESP32 firmware that lifts the EU geographic restriction on Smart Summon & autopilot.   
 > This project interacts with a Tesla vehicle CAN bus. It is intended for controlled bench testing, code review, and research environments only.It sends signals directly to the controller. Do not use this on public roads or in any situation where unsafe behavior could put people or property at risk. You are responsible for your own testing, wiring, configuration, and local laws.
 --- 
 ## What V2.3 Update Changes
+- Fixes an error that injects TLSSC even when disabled
+
+--------------------Update 2.3-------------------
 - Added a toggle in dashboard to enable TLSSC where it is not available.
 - (you need a valid EAP/FSD subscription)  
-
---------------------Update 2.2-------------------
 - bypass R79 EU restriction in AP
 - Expend summon to +/-  85m
 - expanded lateral acceleration limits
