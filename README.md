@@ -10,7 +10,6 @@
 
 --------------------Update 2.4-------------------  
 - Fixes an error that injects TLSSC even when disabled
-- 
 --------------------Update 2.3-------------------  
 - Added a toggle in dashboard to enable TLSSC where it is not available.
 - (you need a valid EAP/FSD subscription)  
