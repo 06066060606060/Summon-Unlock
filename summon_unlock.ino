@@ -1,633 +1,520 @@
-#define CAN_TX_PIN       5
-#define CAN_RX_PIN       6
+const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>EU Summon Unlock</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --panel: #161618;
+    --card: #1c1c1e;
+    --line: #2c2c2e;
+    --txt: #f5f5f7;
+    --muted: #8e8e93;
+    --accent: #0a84ff;
+    --ok: #30d158;
+    --warn: #ff9f0a;
+    --bad: #ff453a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--txt);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--txt);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  header h1::before {
+    content: "⚡";
+    font-size: 14px;
+    opacity: 0.7;
+  }
+  header .pill {
+    font-size: 12px;
+    padding: 5px 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+  }
+  header .pill::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--warn);
+    display: inline-block;
+  }
+  header .pill.ok::before { background: var(--ok); }
+  header .pill.bad::before { background: var(--bad); }
+  main {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 0 16px 24px;
+    display: grid;
+    gap: 16px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 18px;
+  }
+  .panel h2 {
+    margin: 0 0 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--txt);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 12px;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .stat .k {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .stat .v {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 6px;
+    color: var(--txt);
+    letter-spacing: -0.02em;
+  }
+  .stat.full { grid-column: 1 / -1; }
+  .big-state {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 14px;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .big-state.off { color: var(--txt); }
+  .big-state.on  { color: var(--ok); }
+  .tbar {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+  button {
+    font: inherit;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--txt);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+  }
+  button:hover { filter: brightness(1.2); }
+  button:active { transform: scale(0.97); }
+  button.primary {
+    background: var(--txt);
+    color: var(--bg);
+    border-color: transparent;
+  }
+  button.danger {
+    background: var(--card);
+    color: var(--bad);
+    border-color: #3a1f23;
+  }
+  button.warn {
+    background: var(--warn);
+    color: #000;
+    border-color: transparent;
+  }
+  .desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+  .desc b { color: var(--txt); font-weight: 600; }
+  .ok { color: var(--ok); }
+  .warn { color: var(--warn); }
+  .bad { color: var(--bad); }
+  .footer {
+    color: var(--muted);
+    font-size: 11px;
+    text-align: center;
+    padding: 14px 0;
+    line-height: 1.6;
+  }
+  .footer a { color: var(--muted); text-decoration: none; }
+  input[type=file] {
+    width: 100%;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+  .progress {
+    width: 100%;
+    height: 8px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 12px;
+    display: none;
+  }
+  .progress.show { display: block; }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.15s ease;
+  }
+  .ota-msg {
+    font-size: 12px;
+    margin-top: 10px;
+    color: var(--muted);
+  }
+  .ota-msg.ok  { color: var(--ok); }
+  .ota-msg.bad { color: var(--bad); }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .toggle-row .lbl { font-size: 14px; font-weight: 600; color: var(--txt); }
+  .switch { position: relative; width: 50px; height: 30px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 30px;
+    transition: 0.2s;
+  }
+  .slider::before {
+    content: "";
+    position: absolute;
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    top: 3px;
+    background: var(--txt);
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--ok); border-color: transparent; }
+  .switch input:checked + .slider::before { transform: translateX(20px); background: #000; }
+</style>
+</head>
+<body>
+<header>
+  <h1>EU Summon Unlock <span id="hdr_ver" style="color:var(--muted);font-weight:600;">V2.1</span></h1>
+  <span class="pill" id="conn">connecting…</span>
+</header>
+<main>
+
+  <section class="panel">
+    <div class="stat full" style="min-height:auto;padding:16px 14px;">
+      <div class="k">State</div>
+      <div class="v" id="big">OFF</div>
+    </div>
+    <div class="tbar">
+      <button class="primary" onclick="post('/api/enable')">Enable</button>
+      <button class="danger" onclick="post('/api/disable')">Disable</button>
+      <button class="warn" id="btnForceMode">AP injection</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Traffic Light &amp; Stop Sign Control</h2>
+    <div class="toggle-row">
+      <span class="lbl">Enable TLSSC</span>
+      <label class="switch">
+        <input type="checkbox" id="tlsscToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="desc">
+      Injects <b>UI_fsdStopsControlEnabled = 1</b> on <b>0x3FD</b> mux0 bit38.<br>
+      Off by default. Applied only while the injection gate is open.
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Injection Gate</h2>
+    <div class="row">
+      <div class="stat"><div class="k">Gate</div><div class="v" id="gate_status">CLOSED</div></div>
+      <div class="stat"><div class="k">APActive (info only)</div><div class="v" id="g_ap_v">OFF</div></div>
+      <div class="stat"><div class="k">Parked</div><div class="v" id="g_pk_v">OFF</div></div>
+      <div class="stat"><div class="k">Summoning</div><div class="v" id="g_su_v">OFF</div></div>
+    </div>
+    <div class="desc">
+      Gate open if Parked OR Summoning only.<br>
+      APActive (AP/TACC) only, doesn't start injection.
+    </div>
+  </section>
 
 
-#include <Arduino.h>
-#include <WiFi.h>
-#include <WebServer.h>
-#include <Preferences.h>
-#include <Update.h>
-#include "driver/twai.h"
-#include "index_html.h"
-#define FW_VERSION "V2.5"
-static volatile bool forceMode = false;
+  <section class="panel">
+    <h2>Live</h2>
+    <div class="row">
+      <div class="stat"><div class="k">280 (gear/ACA)</div><div class="v" id="s_280">0</div></div>
+      <div class="stat"><div class="k">390 (DIF gear)</div><div class="v" id="s_390">0</div></div>
+      <div class="stat"><div class="k">921 (AP status)</div><div class="v" id="s_921">0</div></div>
+      <div class="stat"><div class="k">1016 (SPR)</div><div class="v" id="s_1016">0</div></div>
+      <div class="stat"><div class="k">1021 mux1 rx</div><div class="v" id="s_rx">0</div></div>
+      <div class="stat"><div class="k">TX ok</div><div class="v ok" id="s_ok">0</div></div>
+      <div class="stat"><div class="k">TX fail</div><div class="v" id="s_fail">0</div></div>
+      <div class="stat"><div class="k">CAN bus</div><div class="v" id="s_can">running</div></div>
+      <div class="stat"><div class="k">Last 1021</div><div class="v" id="s_l1021">no</div></div>
+      <div class="stat full"><div class="k">Uptime</div><div class="v" id="s_up">0 s</div></div>
+    </div>
+  </section>
 
-static portMUX_TYPE stateMux = portMUX_INITIALIZER_UNLOCKED;
+  <section class="panel">
+    <h2>TLSSC Restore For Banned car only</h2>
+    <div class="toggle-row">
+      <span class="lbl">DAS_autopilotConfig = SELF_DRIVING</span>
+      <label class="switch">
+        <input type="checkbox" id="tlrstToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="desc">
+      Rewrites <b>0x331</b> DAS_autopilotConfig.<br>
+      Off by default. Applied only while the injection gate is open. May trigger an MCU reboot on the car.
+    </div>
+  </section>
 
-static Preferences   prefs;
-static volatile bool summonEnabled = true;
-static volatile bool tlsscEnabled  = false;   // "Enable TLSSC" - off by default
-static volatile bool tlsscRestoreEnabled = false;   // "TLSSC Restore" (0x331) - off by default
+  <section class="panel">
+    <h2>Firmware / OTA Update</h2>
+    <div class="row" style="margin-bottom:12px;">
+      <div class="stat"><div class="k">Version</div><div class="v" id="fw_ver">—</div></div>
+      <div class="stat"><div class="k">Free heap</div><div class="v" id="fw_free">—</div></div>
+    </div>
+    <input type="file" id="otaFile" accept=".bin">
+    <div class="tbar">
+      <button class="primary" id="btnOtaUpload" onclick="uploadOta()">Upload &amp; Flash</button>
+    </div>
+    <div class="progress" id="otaProgressWrap">
+      <div class="progress-bar" id="otaProgressBar"></div>
+    </div>
+    <div class="ota-msg" id="otaMsg">Select a compiled .bin firmware file, then upload. The device reboots automatically after a successful flash.</div>
+  </section>
 
-static volatile bool gateAPActive  = false;
-static volatile bool gateParked    = true;
-static volatile bool gateSummoning = false;
+  <div class="footer">
+    <a href="/api/stats" target="_blank">/api/stats</a> ·
+    research / educational only · not for use on public roads
+  </div>
+</main>
 
-static volatile bool sprSeen  = false;
-static volatile bool lastAca  = false;
+<script>
+const $ = id => document.getElementById(id);
+const CAN_STATES = ['running','running','bus-off','stopped'];
+let otaUploading = false;
 
-#define PARKED_TIMEOUT_MS  5000
-static volatile uint32_t last280Millis = 0;
+async function fetchStats() {
+  if (otaUploading) return;
+  try {
+    const s = await fetch('/api/stats').then(r => r.json());
 
-static volatile uint32_t rxMux1   = 0;
-static volatile uint32_t txOk     = 0;
-static volatile uint32_t txFail   = 0;
-static volatile uint32_t rx280    = 0;
-static volatile uint32_t rx390    = 0;
-static volatile uint32_t rx921    = 0;
-static volatile uint32_t rx1016   = 0;
-static unsigned long     bootTime = 0;
+    // Big state
+    const big = $('big');
+    if (s.forceMode) {
+      big.textContent = 'FORCE';
+      big.className = 'v warn';
+    } else {
+      big.textContent = s.enabled ? 'ON' : 'OFF';
+      big.className = 'v ' + (s.enabled ? 'ok' : '');
+    }
 
-static char gateBlockReason[48] = "boot";
+    // Force mode button
+    const btnForceMode = $('btnForceMode');
+    if (btnForceMode) {
+      btnForceMode.textContent = s.forceMode ? 'AP Injection: ON' : 'AP Injection: OFF';
+      btnForceMode.style.opacity = s.forceMode ? '1' : '0.7';
+    }
 
-// ── Force inject / force mode ─────────────────────────────────
+    // Gate
+    $('gate_status').textContent = s.gate ? 'OPEN' : 'CLOSED';
+    $('gate_status').className = 'v ' + (s.gate ? 'ok' : 'bad');
 
-static uint8_t       last1021Data[8] = {0};
-static volatile bool last1021Valid = false;
-// ═══════════════════════════════════════════════════════════════
-// HELPERS CAN
-// ═══════════════════════════════════════════════════════════════
+    $('g_ap_v').textContent = s.ap ? 'ON' : 'OFF';
+    $('g_ap_v').className = 'v ' + (s.ap ? 'ok' : '');
+    $('g_pk_v').textContent = s.parked ? 'ON' : 'OFF';
+    $('g_pk_v').className = 'v ' + (s.parked ? 'ok' : '');
+    $('g_su_v').textContent = s.summon ? 'ON' : 'OFF';
+    $('g_su_v').className = 'v ' + (s.summon ? 'ok' : '');
 
-static inline uint8_t readMuxID(const uint8_t *data) {
-    return data[0] & 0x07;
+    // Compteurs
+    $('s_280').textContent  = s.rx280;
+    $('s_390').textContent  = s.rx390;
+    $('s_921').textContent  = s.rx921;
+    $('s_1016').textContent = s.rx1016;
+    $('s_rx').textContent   = s.rxMux1;
+    $('s_ok').textContent   = s.txOk;
+    $('s_fail').textContent = s.txFail;
+    $('s_fail').className   = 'v ' + (s.txFail > 0 ? 'warn' : '');
+
+    const cs = CAN_STATES[s.canState] ?? String(s.canState);
+    $('s_can').textContent = cs;
+    $('s_can').className   = 'v ' + (s.canState === 0 ? 'ok' : s.canState === 2 ? 'bad' : 'warn');
+
+    $('s_l1021').textContent = s.last1021 ? 'yes' : 'no';
+    $('s_l1021').className = 'v ' + (s.last1021 ? 'ok' : 'warn');
+
+    const u = s.uptimeS;
+    $('s_up').textContent = u < 60 ? u + ' s' : Math.floor(u/60) + 'm' + (u%60) + 's';
+
+    if (s.fwVersion) {
+      $('fw_ver').textContent = s.fwVersion;
+      $('hdr_ver').textContent = s.fwVersion;
+    }
+    if (s.freeHeap !== undefined) $('fw_free').textContent = Math.round(s.freeHeap/1024) + ' KB';
+
+    const tg = $('tlsscToggle');
+    if (tg && document.activeElement !== tg) tg.checked = !!s.tlssc;
+
+    const gr = $('tlrstToggle');
+    if (gr && document.activeElement !== gr) gr.checked = !!s.tlrst;
+
+    $('conn').textContent = 'connected';
+    $('conn').className   = 'pill ok';
+  } catch {
+    $('conn').textContent = 'lost';
+    $('conn').className   = 'pill bad';
+  }
 }
 
-static inline bool getBit(const uint8_t *data, int bit) {
-    return (data[bit / 8] >> (bit % 8)) & 0x01;
-}
-static inline void setBit(uint8_t *data, int bit, bool val) {
-    uint8_t mask = (uint8_t)(1U << (bit % 8));
-    if (val) data[bit / 8] |=  mask;
-    else     data[bit / 8] &= ~mask;
-}
+// ── OTA upload ───────────────────────────────────────────────
+function uploadOta() {
+  const input = $('otaFile');
+  const file = input.files[0];
+  const msg = $('otaMsg');
+  const wrap = $('otaProgressWrap');
+  const bar = $('otaProgressBar');
+  const btn = $('btnOtaUpload');
 
-static inline uint8_t readDIGear(const uint8_t *data) {
-    return (data[2] >> 5) & 0x07;
-}
-
-static inline uint8_t readVehicleGear(const uint8_t *data) {
-    return (data[2] >> 5) & 0x07;
-}
-
-static inline int gearState(uint8_t gear) {
-    if (gear == 1)             return  1;
-    if (gear == 2 || gear == 3 || gear == 4) return 0;
-    return -1;
-}
-
-static inline uint8_t readDASStatus(const uint8_t *data) {
-    return data[0] & 0x07;
-}
-// AP « actif » pour status 3,4,5,6
-static inline bool isDASActive(uint8_t status) {
-  bool fm = forceMode;
-
-  switch (status) {
-    // ON : 3,4,5,6
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      fm = true;
-      break;
-
-    // OFF : 0,1,8,9,14
-    case 0:
-    case 1:
-    case 8:
-    case 9:
-    case 14:
-      fm = false;
-      break;
-
-    default:
-      fm = false;
-      break;
+  if (!file) {
+    msg.textContent = 'Please choose a .bin file first.';
+    msg.className = 'ota-msg bad';
+    return;
   }
 
+  const form = new FormData();
+  form.append('update', file, file.name);
 
-  portENTER_CRITICAL(&stateMux);
-  forceMode = fm;
-  portEXIT_CRITICAL(&stateMux);
+  otaUploading = true;
+  btn.disabled = true;
+  input.disabled = true;
+  wrap.className = 'progress show';
+  bar.style.width = '0%';
+  msg.textContent = 'Uploading ' + file.name + '…';
+  msg.className = 'ota-msg';
 
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/update', true);
 
-  return status == 3 || status == 4 || status == 5 || status == 6;
-}
-
-
-
-// ═══════════════════════════════════════════════════════════════
-// LOGIQUE GATE
-// ═══════════════════════════════════════════════════════════════
-
-static inline bool injectionGateOpen() {
-    return gateParked || gateSummoning;
-}
-
-static void recomputeSummoning() {
-    gateSummoning = lastAca && sprSeen;
-}
-
-static void clearSummonOnPark() {
-    gateSummoning = false;
-    sprSeen       = false;
-}
-
-static void clearSummonOnParkIfAcaInactive(uint8_t gear) {
-    if (gear == 1 && !lastAca)
-        clearSummonOnPark();
-}
-
-static void handle280(const uint8_t *data) {
-    rx280++;
-    last280Millis = (uint32_t)millis();
-    uint8_t gear = readDIGear(data);
-    int     gs   = gearState(gear);
-
-    portENTER_CRITICAL(&stateMux);
-    if (gs == 1)  gateParked = true;
-    if (gs == 0)  gateParked = false;
-
-    bool aca = (data[6] & 0x04) != 0;
-    if (lastAca && !aca)
-        sprSeen = false;
-    lastAca = aca;
-    recomputeSummoning();
-
-    clearSummonOnParkIfAcaInactive(gear);
-    portEXIT_CRITICAL(&stateMux);
-}
-
-static void handle390(const uint8_t *data) {
-    rx390++;
-    uint8_t gear = readVehicleGear(data);
-    int     gs   = gearState(gear);
-    if (gs < 0) return;
-
-    portENTER_CRITICAL(&stateMux);
-    uint32_t age = (uint32_t)millis() - last280Millis;
-    if (last280Millis == 0 || age > PARKED_TIMEOUT_MS) {
-        gateParked = (gs == 1);
-        clearSummonOnParkIfAcaInactive(gear);
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const pct = Math.round((e.loaded / e.total) * 100);
+      bar.style.width = pct + '%';
+      msg.textContent = 'Uploading… ' + pct + '%';
     }
-    portEXIT_CRITICAL(&stateMux);
-}
+  };
 
-static void handle921(const uint8_t *data) {
-    rx921++;
-    bool ap = isDASActive(readDASStatus(data));
+  xhr.onload = () => {
+    let ok = xhr.status === 200;
+    let errText = '';
+    try {
+      const r = JSON.parse(xhr.responseText);
+      ok = ok && r.ok;
+      errText = r.error || '';
+    } catch {}
 
-    portENTER_CRITICAL(&stateMux);
-    gateAPActive = ap;
-    portEXIT_CRITICAL(&stateMux);
-}
-
-static void handle1016(const uint8_t *data, uint8_t dlc) {
-    if (dlc < 4) return;
-    rx1016++;
-    uint8_t spr = (data[3] >> 4) & 0x0F;
-
-    portENTER_CRITICAL(&stateMux);
-    if (spr != 0)
-        sprSeen = true;
-    recomputeSummoning();
-    portEXIT_CRITICAL(&stateMux);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// INJECTION SUMMON
-// ═══════════════════════════════════════════════════════════════
-
-static void doInjectSummon(const uint8_t *srcData, uint8_t dlc) {
-    if (dlc < 8) return;
-    twai_message_t out;
-    out.identifier       = 1021;
-    out.data_length_code = 8;
-    out.flags            = 0;
-    memcpy(out.data, srcData, 8);
-
-    setBit(out.data, 19, false);
-    setBit(out.data, 47, true);
-
-    rxMux1++;
-    esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
-    if (err == ESP_OK) txOk++;
-    else               txFail++;
-}
-
-// ── TLSSC : 0x3FD mux0 bit38 -> UI_fsdStopsControlEnabled = 1 ──
-static void doInjectTLSSC(const uint8_t *srcData, uint8_t dlc) {
-    if (dlc < 8) return;
-    twai_message_t out;
-    out.identifier       = 1021;
-    out.data_length_code = 8;
-    out.flags            = 0;
-    memcpy(out.data, srcData, 8);
-
-    setBit(out.data, 38, true);   // UI_fsdStopsControlEnabled = 1
-
-    esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
-    if (err == ESP_OK) txOk++;
-    else               txFail++;
-}
-
-static void injectTLSSC(const twai_message_t &src) {
-    bool en, gate, fmode;
-    portENTER_CRITICAL(&stateMux);
-    en    = tlsscEnabled;
-    gate  = injectionGateOpen();
-    fmode = forceMode;
-    portEXIT_CRITICAL(&stateMux);
-
-    if ((!en || !gate))
-        return;
-
-    doInjectTLSSC(src.data, src.data_length_code);
-}
-
-// ── TLSSC Restore : 0x331 (DAS_autopilotConfig) DAS_autopilot & DAS_autopilotBase -> SELF_DRIVING(3) ──
-// RE (flipper-tesla-fsd): write byte[0] low 6 bits = 0x1B  => both 3-bit fields = 3 (SELF_DRIVING)
-static void doInjectTlsscRestore(const uint8_t *srcData, uint8_t dlc) {
-    if (dlc < 1) return;
-    twai_message_t out;
-    out.identifier       = 817;   // 0x331
-    out.data_length_code = dlc;
-    out.flags            = 0;
-    memcpy(out.data, srcData, dlc);
-
-    // Preserve top 2 bits of byte0, force low 6 bits to 0x1B
-    out.data[0] = (uint8_t)((out.data[0] & 0xC0) | 0x1B);
-
-    esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
-    if (err == ESP_OK) txOk++;
-    else               txFail++;
-}
-
-static void injectTlsscRestore(const twai_message_t &src) {
-    bool en, gate, fmode;
-    portENTER_CRITICAL(&stateMux);
-    en    = tlsscRestoreEnabled;
-    gate  = injectionGateOpen();
-    fmode = forceMode;
-    portEXIT_CRITICAL(&stateMux);
-
-    if ((!en || !gate) && !fmode)
-        return;
-
-    doInjectTlsscRestore(src.data, src.data_length_code);
-}
-
-static void injectSummon(const twai_message_t &src) {
-    bool en, gate, fmode;
-    portENTER_CRITICAL(&stateMux);
-    en    = summonEnabled;
-    gate  = injectionGateOpen();
-    fmode = forceMode;
-    if (!gate && !fmode) {
-        if (!gateAPActive && !gateParked && !gateSummoning)
-            strncpy(gateBlockReason, "AP-,Park-,Summon-", sizeof(gateBlockReason));
-    }
-    portEXIT_CRITICAL(&stateMux);
-
-    if ((!en || !gate) && !fmode)
-        return;
-
-    doInjectSummon(src.data, src.data_length_code);
-}
-
-// ═══════════════════════════════════════════════════════════════
-//  CAN (Core 1, HIGH PRIORITY)
-// ═══════════════════════════════════════════════════════════════
-
-static const uint32_t WATCH_IDS[] = {280, 390, 921, 1016, 1021};
-
-static void canTask(void *arg) {
-    for (;;) {
-        twai_message_t f;
-        while (twai_receive(&f, pdMS_TO_TICKS(2)) == ESP_OK) {
-            switch (f.identifier) {
-                case 280:
-                    if (f.data_length_code >= 7) handle280(f.data);
-                    break;
-                case 390:
-                    if (f.data_length_code >= 8) handle390(f.data);
-                    break;
-                case 921:
-                    if (f.data_length_code >= 1) handle921(f.data);
-                    break;
-                case 1016:
-                    handle1016(f.data, f.data_length_code);
-                    break;
-                case 1021:
-                    if (f.data_length_code >= 8) {
-                        uint8_t mux = readMuxID(f.data);
-                        if (mux == 1) {
-                            portENTER_CRITICAL(&stateMux);
-                            memcpy(last1021Data, f.data, 8);
-                            last1021Valid = true;
-                            portEXIT_CRITICAL(&stateMux);
-                            injectSummon(f);
-                        } else if (mux == 0) {
-                            injectTLSSC(f);
-                        }
-                    }
-                    break;
-                case 817:    // 0x331 DAS_autopilotConfig - TLSSC Restore
-                    injectTlsscRestore(f);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        twai_status_info_t st;
-        twai_get_status_info(&st);
-        if (st.state == TWAI_STATE_BUS_OFF) {
-            twai_initiate_recovery();
-            vTaskDelay(pdMS_TO_TICKS(300));
-        }
-
-        uint32_t now = (uint32_t)millis();
-        portENTER_CRITICAL(&stateMux);
-        bool can280Stale = (last280Millis > 0) &&
-                           (now - last280Millis > PARKED_TIMEOUT_MS);
-        if (can280Stale)
-            gateParked = true;
-        portEXIT_CRITICAL(&stateMux);
-
-        vTaskDelay(1);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// DASHBOARD WI-FI
-// ═══════════════════════════════════════════════════════════════
-
-extern const char INDEX_HTML[] PROGMEM;
-static WebServer server(80);
-
-
-
-static volatile bool     otaInProgress = false;
-static volatile bool     otaSuccess    = false;
-static volatile bool     otaError      = false;
-static volatile uint32_t otaBytes      = 0;
-static volatile uint32_t otaTotal      = 0;
-static char              otaErrMsg[64] = "";
-
-static void cfgLoad() {
-    prefs.begin("summon", true);
-    summonEnabled = prefs.getBool("en", true);
-    tlsscEnabled  = prefs.getBool("tlssc", false);
-    tlsscRestoreEnabled = prefs.getBool("tlrst", false);
-    prefs.end();
-}
-
-static void cfgSave() {
-    prefs.begin("summon", false);
-    prefs.putBool("en", summonEnabled);
-    prefs.putBool("tlssc", tlsscEnabled);
-    prefs.putBool("tlrst", tlsscRestoreEnabled);
-    prefs.end();
-}
-
-static String statsToJson() {
-    bool en, tlssc, tlrst, ap, parked, summon, aca, spr, fmode, l1021;
-    uint32_t rmx, tok, tfail, r280, r390, r921, r1016;
-
-    portENTER_CRITICAL(&stateMux);
-    en     = summonEnabled;
-    tlssc  = tlsscEnabled;
-    tlrst  = tlsscRestoreEnabled;
-    ap     = gateAPActive;
-    parked = gateParked;
-    summon = gateSummoning;
-    aca    = lastAca;
-    spr    = sprSeen;
-    rmx    = rxMux1;
-    tok    = txOk;
-    tfail  = txFail;
-    r280   = rx280;
-    r390   = rx390;
-    r921   = rx921;
-    r1016  = rx1016;
-    fmode  = forceMode;
-    l1021  = last1021Valid;
-    portEXIT_CRITICAL(&stateMux);
-
-    bool gate = parked || summon;
-
-    twai_status_info_t st; twai_get_status_info(&st);
-
-    String s = "{";
-    s += "\"enabled\":"  + String(en     ? "true" : "false");
-    s += ",\"tlssc\":"   + String(tlssc  ? "true" : "false");
-    s += ",\"tlrst\":"   + String(tlrst  ? "true" : "false");
-    s += ",\"gate\":"    + String(gate   ? "true" : "false");
-    s += ",\"ap\":"      + String(ap     ? "true" : "false");
-    s += ",\"parked\":"  + String(parked ? "true" : "false");
-    s += ",\"summon\":"  + String(summon ? "true" : "false");
-    s += ",\"aca\":"     + String(aca    ? "true" : "false");
-    s += ",\"spr\":"     + String(spr    ? "true" : "false");
-    s += ",\"forceMode\":"+ String(fmode ? "true" : "false");
-    s += ",\"last1021\":"+ String(l1021 ? "true" : "false");
-    s += ",\"rxMux1\":"  + String(rmx);
-    s += ",\"txOk\":"    + String(tok);
-    s += ",\"txFail\":"  + String(tfail);
-    s += ",\"rx280\":"   + String(r280);
-    s += ",\"rx390\":"   + String(r390);
-    s += ",\"rx921\":"   + String(r921);
-    s += ",\"rx1016\":"  + String(r1016);
-    s += ",\"canState\":" + String((int)st.state);
-    s += ",\"uptimeS\":"  + String((millis() - bootTime) / 1000);
-    s += ",\"fwVersion\":\"" + String(FW_VERSION) + "\"";
-    s += ",\"otaInProgress\":" + String(otaInProgress ? "true" : "false");
-    s += ",\"otaSuccess\":"    + String(otaSuccess    ? "true" : "false");
-    s += ",\"otaError\":"      + String(otaError      ? "true" : "false");
-    s += ",\"otaErrMsg\":\""   + String(otaErrMsg) + "\"";
-    s += ",\"otaBytes\":"      + String(otaBytes);
-    s += ",\"otaTotal\":"      + String(otaTotal);
-    s += ",\"freeHeap\":"      + String(ESP.getFreeHeap());
-    s += "}";
-    return s;
-}
-
-static void httpRoot()   { server.send_P(200, "text/html", INDEX_HTML); }
-static void httpStats()  { server.send(200, "application/json", statsToJson()); }
-
-static void httpEnable() {
-    portENTER_CRITICAL(&stateMux); summonEnabled = true;  portEXIT_CRITICAL(&stateMux);
-    cfgSave();
-    server.send(200, "application/json", statsToJson());
-}
-static void httpDisable() {
-    portENTER_CRITICAL(&stateMux); summonEnabled = false; portEXIT_CRITICAL(&stateMux);
-    cfgSave();
-    server.send(200, "application/json", statsToJson());
-}
-
-static void httpTlsscEnable() {
-    portENTER_CRITICAL(&stateMux); tlsscEnabled = true;  portEXIT_CRITICAL(&stateMux);
-    cfgSave();
-    server.send(200, "application/json", statsToJson());
-}
-static void httpTlsscDisable() {
-    portENTER_CRITICAL(&stateMux); tlsscEnabled = false; portEXIT_CRITICAL(&stateMux);
-    cfgSave();
-    server.send(200, "application/json", statsToJson());
-}
-static void httpTlrstEnable() {
-    portENTER_CRITICAL(&stateMux); tlsscRestoreEnabled = true;  portEXIT_CRITICAL(&stateMux);
-    cfgSave();
-    server.send(200, "application/json", statsToJson());
-}
-static void httpTlrstDisable() {
-    portENTER_CRITICAL(&stateMux); tlsscRestoreEnabled = false; portEXIT_CRITICAL(&stateMux);
-    cfgSave();
-    server.send(200, "application/json", statsToJson());
-}
-
-static void httpForce() {
-    uint8_t data[8];
-    bool valid;
-    portENTER_CRITICAL(&stateMux);
-    valid = last1021Valid;
-    if (valid) memcpy(data, last1021Data, 8);
-    portEXIT_CRITICAL(&stateMux);
-
-    if (valid) {
-        doInjectSummon(data, 8);
-    } else {
-        uint8_t fallback[8] = {0x01, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00};
-        doInjectSummon(fallback, 8);
-    }
-    server.send(200, "application/json", statsToJson());
-}
-
-static void httpForceMode() {
-    portENTER_CRITICAL(&stateMux);
-    forceMode = !forceMode;
-    portEXIT_CRITICAL(&stateMux);
-    server.send(200, "application/json", statsToJson());
-}
-
-// ─── OTA update ─────────────────────────────────────────────
-
-static void httpOtaUpload() {
-    HTTPUpload &up = server.upload();
-
-    if (up.status == UPLOAD_FILE_START) {
-        otaInProgress = true;
-        otaSuccess    = false;
-        otaError      = false;
-        otaBytes      = 0;
-        otaErrMsg[0]  = '\0';
-        Serial.printf("[OTA] Start: %s\n", up.filename.c_str());
-
-        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
-            otaError = true;
-            strncpy(otaErrMsg, Update.errorString(), sizeof(otaErrMsg) - 1);
-            Serial.printf("[OTA] begin() failed: %s\n", otaErrMsg);
-        }
-    } else if (up.status == UPLOAD_FILE_WRITE) {
-        if (!otaError && Update.write(up.buf, up.currentSize) != up.currentSize) {
-            otaError = true;
-            strncpy(otaErrMsg, Update.errorString(), sizeof(otaErrMsg) - 1);
-            Serial.printf("[OTA] write() failed: %s\n", otaErrMsg);
-        }
-        otaBytes += up.currentSize;
-    } else if (up.status == UPLOAD_FILE_END) {
-        if (!otaError && Update.end(true)) {
-            otaSuccess = true;
-            otaTotal   = otaBytes;
-            Serial.printf("[OTA] Success: %u bytes\n", up.totalSize);
-        } else if (!otaError) {
-            otaError = true;
-            strncpy(otaErrMsg, Update.errorString(), sizeof(otaErrMsg) - 1);
-            Serial.printf("[OTA] end() failed: %s\n", otaErrMsg);
-        }
-        otaInProgress = false;
-    } else if (up.status == UPLOAD_FILE_ABORTED) {
-        Update.end();
-        otaInProgress = false;
-        otaError      = true;
-        strncpy(otaErrMsg, "aborted", sizeof(otaErrMsg) - 1);
-        Serial.println("[OTA] Aborted");
-    }
-}
-
-static void httpOtaFinish() {
-    bool ok = otaSuccess && !otaError;
-    String resp = String("{\"ok\":") + (ok ? "true" : "false") +
-                  ",\"error\":\"" + String(otaErrMsg) + "\"}";
-    server.sendHeader("Connection", "close");
-    server.send(200, "application/json", resp);
     if (ok) {
-        delay(700);
-        ESP.restart();
+      bar.style.width = '100%';
+      msg.textContent = 'Flash successful — rebooting…';
+      msg.className = 'ota-msg ok';
+      setTimeout(() => location.reload(), 6000);
+    } else {
+      msg.textContent = 'OTA failed' + (errText ? ': ' + errText : '');
+      msg.className = 'ota-msg bad';
+      btn.disabled = false;
+      input.disabled = false;
+      otaUploading = false;
     }
+  };
+
+  xhr.onerror = () => {
+    msg.textContent = 'Upload error — device likely rebooted or connection lost.';
+    msg.className = 'ota-msg bad';
+    btn.disabled = false;
+    input.disabled = false;
+    otaUploading = false;
+  };
+
+  xhr.send(form);
 }
 
-static void webTask(void *arg) {
-    WiFi.mode(WIFI_AP);
-    uint8_t mac[6]; WiFi.softAPmacAddress(mac);
-    char ssid[28];
-    snprintf(ssid, sizeof(ssid), "SummonUnlock-%02X%02X", mac[4], mac[5]);
-    WiFi.softAP(ssid, "summon1234");
-    Serial.printf("[WIFI] SSID=%s  PASS=summon1234  IP=%s\n",
-                  ssid, WiFi.softAPIP().toString().c_str());
-
-    server.on("/",            HTTP_GET,  httpRoot);
-    server.on("/api/stats",   HTTP_GET,  httpStats);
-    server.on("/api/enable",  HTTP_POST, httpEnable);
-    server.on("/api/disable", HTTP_POST, httpDisable);
-    server.on("/api/tlssc-enable",  HTTP_POST, httpTlsscEnable);
-    server.on("/api/tlssc-disable", HTTP_POST, httpTlsscDisable);
-    server.on("/api/tlrst-enable",  HTTP_POST, httpTlrstEnable);
-    server.on("/api/tlrst-disable", HTTP_POST, httpTlrstDisable);
-    server.on("/api/force",   HTTP_POST, httpForce);
-    server.on("/api/forcemode", HTTP_POST, httpForceMode);
-    server.on("/update", HTTP_POST, httpOtaFinish, httpOtaUpload);
-    server.begin();
-    for (;;) { server.handleClient(); vTaskDelay(1); }
+async function post(url) {
+  await fetch(url, { method: 'POST' });
+  fetchStats();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SETUP / LOOP
-// ═══════════════════════════════════════════════════════════════
+$('tlsscToggle').addEventListener('change', (e) => {
+  post(e.target.checked ? '/api/tlssc-enable' : '/api/tlssc-disable');
+});
 
-void setup() {
-    bootTime = millis();
-    Serial.begin(115200);
-    delay(500);
-    Serial.printf("IDF: %s\n", esp_get_idf_version());
+$('tlrstToggle').addEventListener('change', (e) => {
+  post(e.target.checked ? '/api/tlrst-enable' : '/api/tlrst-disable');
+});
 
-    cfgLoad();
-
-   
-
-    twai_general_config_t g = TWAI_GENERAL_CONFIG_DEFAULT(
-        (gpio_num_t)CAN_TX_PIN, (gpio_num_t)CAN_RX_PIN, TWAI_MODE_NORMAL);
-    g.rx_queue_len = 64;
-    g.tx_queue_len = 16;
-    twai_timing_config_t t = TWAI_TIMING_CONFIG_500KBITS();
-    twai_filter_config_t f = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-
-    Serial.printf("twai_install=%d  twai_start=%d\n",
-                  (int)twai_driver_install(&g, &t, &f),
-                  (int)twai_start());
-
-    Serial.println("=== SummonUnlock ready ===");
-    Serial.println("  Injection gate : Parked || Summoning");
-    Serial.println("  CAN 1021 mux1  : bit19->0, bit47->1");
-    Serial.printf ("  summonEnabled  : %s\n", summonEnabled ? "true" : "false");
-    Serial.printf ("  tlsscEnabled   : %s (0x3FD mux0 bit38)\n", tlsscEnabled ? "true" : "false");
-    Serial.printf ("  tlsscRestore   : %s (0x331 byte0 low6=0x1B)\n", tlsscRestoreEnabled ? "true" : "false");
-
-    xTaskCreatePinnedToCore(canTask, "can", 4096,  nullptr, 5, nullptr, 1);
-    xTaskCreatePinnedToCore(webTask, "web", 8192,  nullptr, 1, nullptr, 0);
-}
-
-void loop() {
-    vTaskDelay(pdMS_TO_TICKS(50));
-}
+fetchStats();
+setInterval(fetchStats, 800);
+</script>
+</body>
+</html>
+)HTML";
