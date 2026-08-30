@@ -232,8 +232,7 @@ bc1pl9nuyhqd78gjc2wdcqr39de7qwtff732ngr28vy8r2sxfa7a6uzsrhe387
 
 ## 🙏 Credits
 
-- Inspired by **Ev Open Can Mod**  
-  https://github.com/ev-open-can-tools/ev-open-can-tools
+- Inspired by **Ev Open Can Tools**  
 - Created by **X₿mod**.
 - ESP32 TWAI driver by **Espressif Systems**.
 - Automotive CAN research community.
