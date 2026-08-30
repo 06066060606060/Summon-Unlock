@@ -112,9 +112,6 @@ POST /api/disable  → disable injection, persist to NVS
 ---  
 
 ## Variant
-- EU Summon Unlock V2.3 TLSSC restore for banned car
- https://github.com/06066060606060/Summon-Unlock/tree/ban-version
-
 -  Nag-killer & EU-Summon-Unlock unified for LilyGO/T-2Can  
 https://github.com/06066060606060/T2CAN-Nag-killer-EU-unlock
 
