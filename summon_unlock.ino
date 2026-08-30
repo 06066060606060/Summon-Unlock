@@ -9,7 +9,7 @@
 #include <Update.h>
 #include "driver/twai.h"
 #include "index_html.h"
-#define FW_VERSION "V2.5"
+#define FW_VERSION "V2.5.1"
 static volatile bool forceMode = false;
 
 static portMUX_TYPE stateMux = portMUX_INITIALIZER_UNLOCKED;
@@ -18,6 +18,10 @@ static Preferences   prefs;
 static volatile bool summonEnabled = true;
 static volatile bool tlsscEnabled  = false;   // "Enable TLSSC" - off by default
 static volatile bool tlsscRestoreEnabled = false;   // "TLSSC Restore" (0x331) - off by default
+
+// ── Lane Change / UI_ulcBlindSpotConfig (0x3F8) ──
+// 0 = STANDARD, 1 = AGGRESSIVE, 2 = MAD_MAX
+static volatile uint8_t blindspotConfig = 0;
 
 static volatile bool gateAPActive  = false;
 static volatile bool gateParked    = true;
@@ -194,6 +198,43 @@ static void handle1016(const uint8_t *data, uint8_t dlc) {
     portEXIT_CRITICAL(&stateMux);
 }
 
+// ── Lane Change : 0x3F8 / UI_ulcBlindSpotConfig ─────────────
+// Signal is bits 52..53 = byte[6] bits 4..5.
+// Applied only in AP / NOA modes (DAS status 3, 4 or 5).
+static void injectBlindspotConfig(const twai_message_t &src) {
+    if (src.data_length_code < 7) return;
+
+    bool apOnly;
+    uint8_t mode;
+
+    portENTER_CRITICAL(&stateMux);
+    apOnly = gateAPActive;
+    mode = blindspotConfig;
+    portEXIT_CRITICAL(&stateMux);
+
+    // AP / Autosteer, Restricted Autosteer and NOA only.
+    // FSD (status 6) is intentionally excluded.
+    if (!apOnly) return;
+
+    mode = (mode > 2) ? 0 : mode;
+
+    // UI_ulcBlindSpotConfig: 2 bits, Intel/Little Endian, start bit 52.
+    uint8_t oldValue = (src.data[6] >> 4) & 0x03;
+    if (oldValue == mode) return;
+
+    twai_message_t out;
+    out.identifier       = 1016;   // 0x3F8
+    out.data_length_code = src.data_length_code;
+    out.flags            = 0;
+    memcpy(out.data, src.data, src.data_length_code);
+
+    out.data[6] = (uint8_t)((out.data[6] & 0xCF) | ((mode & 0x03) << 4));
+
+    esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
+    if (err == ESP_OK) txOk++;
+    else               txFail++;
+}
+
 // ═══════════════════════════════════════════════════════════════
 // INJECTION SUMMON
 // ═══════════════════════════════════════════════════════════════
@@ -317,6 +358,7 @@ static void canTask(void *arg) {
                     break;
                 case 1016:
                     handle1016(f.data, f.data_length_code);
+                    injectBlindspotConfig(f);
                     break;
                 case 1021:
                     if (f.data_length_code >= 8) {
@@ -380,6 +422,8 @@ static void cfgLoad() {
     summonEnabled = prefs.getBool("en", true);
     tlsscEnabled  = prefs.getBool("tlssc", false);
     tlsscRestoreEnabled = prefs.getBool("tlrst", false);
+    blindspotConfig = prefs.getUChar("bsCfg", 0);
+    if (blindspotConfig > 2) blindspotConfig = 0;
     prefs.end();
 }
 
@@ -388,11 +432,13 @@ static void cfgSave() {
     prefs.putBool("en", summonEnabled);
     prefs.putBool("tlssc", tlsscEnabled);
     prefs.putBool("tlrst", tlsscRestoreEnabled);
+    prefs.putUChar("bsCfg", blindspotConfig);
     prefs.end();
 }
 
 static String statsToJson() {
     bool en, tlssc, tlrst, ap, parked, summon, aca, spr, fmode, l1021;
+    uint8_t bsCfg;
     uint32_t rmx, tok, tfail, r280, r390, r921, r1016;
 
     portENTER_CRITICAL(&stateMux);
@@ -413,6 +459,7 @@ static String statsToJson() {
     r1016  = rx1016;
     fmode  = forceMode;
     l1021  = last1021Valid;
+    bsCfg   = blindspotConfig;
     portEXIT_CRITICAL(&stateMux);
 
     bool gate = parked || summon;
@@ -423,6 +470,7 @@ static String statsToJson() {
     s += "\"enabled\":"  + String(en     ? "true" : "false");
     s += ",\"tlssc\":"   + String(tlssc  ? "true" : "false");
     s += ",\"tlrst\":"   + String(tlrst  ? "true" : "false");
+    s += ",\"blindspotConfig\":" + String((int)bsCfg);
     s += ",\"gate\":"    + String(gate   ? "true" : "false");
     s += ",\"ap\":"      + String(ap     ? "true" : "false");
     s += ",\"parked\":"  + String(parked ? "true" : "false");
@@ -483,6 +531,26 @@ static void httpTlrstEnable() {
 }
 static void httpTlrstDisable() {
     portENTER_CRITICAL(&stateMux); tlsscRestoreEnabled = false; portEXIT_CRITICAL(&stateMux);
+    cfgSave();
+    server.send(200, "application/json", statsToJson());
+}
+
+static void httpBlindspotConfig() {
+    if (!server.hasArg("mode")) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"missing mode\"}");
+        return;
+    }
+
+    int mode = server.arg("mode").toInt();
+    if (mode < 0 || mode > 2) {
+        server.send(400, "application/json", "{\"ok\":false,\"error\":\"mode must be 0, 1 or 2\"}");
+        return;
+    }
+
+    portENTER_CRITICAL(&stateMux);
+    blindspotConfig = (uint8_t)mode;
+    portEXIT_CRITICAL(&stateMux);
+
     cfgSave();
     server.send(200, "application/json", statsToJson());
 }
@@ -585,6 +653,7 @@ static void webTask(void *arg) {
     server.on("/api/tlssc-disable", HTTP_POST, httpTlsscDisable);
     server.on("/api/tlrst-enable",  HTTP_POST, httpTlrstEnable);
     server.on("/api/tlrst-disable", HTTP_POST, httpTlrstDisable);
+    server.on("/api/blindspot", HTTP_POST, httpBlindspotConfig);
     server.on("/api/force",   HTTP_POST, httpForce);
     server.on("/api/forcemode", HTTP_POST, httpForceMode);
     server.on("/update", HTTP_POST, httpOtaFinish, httpOtaUpload);
