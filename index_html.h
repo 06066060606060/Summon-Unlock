@@ -222,6 +222,52 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     margin-top: 14px;
   }
   .toggle-row .lbl { font-size: 14px; font-weight: 600; color: var(--txt); }
+  .lc-box {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  .lc-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 9px;
+  }
+  .lc-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--txt);
+  }
+  .lc-current {
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .lc-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .lc-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 7px;
+  }
+  .lc-buttons button {
+    padding: 11px 7px;
+    min-width: 0;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .lc-buttons button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+  }
   .switch { position: relative; width: 50px; height: 30px; flex-shrink: 0; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .slider {
@@ -279,6 +325,19 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     <div class="desc">
       Injects <b>UI_fsdStopsControlEnabled = 1</b> on <b>0x3FD</b> mux0 bit38.<br>
       Off by default. Applied only while the injection gate is open.
+    </div>
+
+    <div class="lc-box">
+      <div class="lc-head">
+        <span class="lc-title">Lane Change</span>
+        <span class="lc-current" id="blindspotCurrent">STANDARD</span>
+      </div>
+      <div class="lc-sub">BLINDSPOT CONFIG · AP / NOA ONLY</div>
+      <div class="lc-buttons">
+        <button id="blindspotStandard">STANDARD</button>
+        <button id="blindspotAggressive">AGGRESSIVE</button>
+        <button id="blindspotMadMax">MAD_MAX</button>
+      </div>
     </div>
   </section>
 
@@ -420,6 +479,13 @@ async function fetchStats() {
     const gr = $('tlrstToggle');
     if (gr && document.activeElement !== gr) gr.checked = !!s.tlrst;
 
+    const bs = Number(s.blindspotConfig ?? 0);
+    const bsNames = ['STANDARD', 'AGGRESSIVE', 'MAD_MAX'];
+    $('blindspotCurrent').textContent = bsNames[bs] || 'STANDARD';
+    $('blindspotStandard').classList.toggle('primary', bs === 0);
+    $('blindspotAggressive').classList.toggle('primary', bs === 1);
+    $('blindspotMadMax').classList.toggle('primary', bs === 2);
+
     $('conn').textContent = 'connected';
     $('conn').className   = 'pill ok';
   } catch {
@@ -511,6 +577,17 @@ $('tlsscToggle').addEventListener('change', (e) => {
 $('tlrstToggle').addEventListener('change', (e) => {
   post(e.target.checked ? '/api/tlrst-enable' : '/api/tlrst-disable');
 });
+
+async function setBlindspotConfig(mode) {
+  try {
+    await fetch('/api/blindspot?mode=' + mode, { method: 'POST' });
+    fetchStats();
+  } catch {}
+}
+
+$('blindspotStandard').addEventListener('click', () => setBlindspotConfig(0));
+$('blindspotAggressive').addEventListener('click', () => setBlindspotConfig(1));
+$('blindspotMadMax').addEventListener('click', () => setBlindspotConfig(2));
 
 fetchStats();
 setInterval(fetchStats, 800);
