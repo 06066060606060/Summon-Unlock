@@ -1,4 +1,4 @@
-# EU Summon Unlock V2.5
+# EU Summon Unlock V2.5.1
 
 ### ESP32 firmware for Tesla Smart Summon & Autopilot EU restriction research
 
@@ -14,9 +14,10 @@
 
 ## 📋 What's New
 
-### V2.5
+### V2.5.1
 
 - Added **TLSSC Restore** for banned cars.
+- Added blindspot aggressiveness settings during lane change (madmax)
 
 ### V2.4
 
