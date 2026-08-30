@@ -155,6 +155,9 @@ POST /api/disable  → Disable injection and persist to NVS
 ---
 
 ## 📦 Build Firmware for OTA
+For the 1st flash with arduino IDE:  
+Partition Scheme:
+Default 4MB with spiffs(1.2MB APP/1.5MB SPIFFS)
 
 Build the firmware using **Arduino IDE**:
 
