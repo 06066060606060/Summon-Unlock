@@ -182,6 +182,12 @@ Repository:
 
 https://github.com/06066060606060/T2CAN-Nag-killer-EU-unlock
 
+### Advanced EAP & EU-Summon-Unlock — LilyGO / T-2Can
+
+Repository:
+
+https://github.com/06066060606060/Advanced-eap-eu-unlock
+
 ---
 
 ## ⚠️ Safety Notes
