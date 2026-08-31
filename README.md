@@ -44,18 +44,8 @@
 Injection only occurs when at least one of the following conditions is true:
 
 ```text
-gate  = Parked OR Summoning
-force = Autopilot active
+gate  = Parked, Summoning or Autopilot active
 ```
-
-### Injection Flags
-
-| Flag | Source | Condition |
-|---|---|---|
-| `Parked` | CAN 280 / 390 | Gear == `P` |
-| `Summoning` | CAN 280 + 1016 | `ACA == 1` AND `SPR != 0` |
-| `gateAPActive` | CAN 921 | Status == `3, 4, 5, 6` |
-
 This prevents injection while driving manually.
 
 > ⚠️ **TLSSC warning:** Do not enable TLSSC if you do not have the EAP option.
