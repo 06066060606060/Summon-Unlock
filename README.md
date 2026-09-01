@@ -18,7 +18,7 @@
 
 ### V2.5.1
 
-- Added **TLSSC Restore** for banned cars.
+- Added **TLSSC Restore** for banned cars.   (DO NOT APPLY ON NON BANNED CAR)
 - Added blindspot aggressiveness settings during lane change (madmax)
 
 ### V2.4
