@@ -12,13 +12,13 @@
 
 ---
 
-### ⚠️ Do not activate TLSSC if you do not have an FSD subscription. high risk of being banned. 
+### ⚠️ DO NOT APPLY TLSSC RESTORE ON NON BANNED CAR (you will be banned instantly)
 
 ## 📋 What's New
 
 ### V2.5.1
 
-- Added **TLSSC Restore** for banned cars.   (DO NOT APPLY ON NON BANNED CAR)
+- Added **TLSSC Restore** for banned cars. 
 - Added blindspot aggressiveness settings during lane change (madmax)
 
 ### V2.4
