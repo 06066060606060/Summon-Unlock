@@ -47,7 +47,7 @@ gate  = Parked, Summoning or Autopilot active
 ```
 This prevents injection while driving manually.
 
-> ⚠️ **TLSSC warning:** Do not enable TLSSC if you do not have the EAP option.
+
 
 ---
 
