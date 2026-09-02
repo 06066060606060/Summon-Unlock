@@ -292,11 +292,51 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
   }
   .switch input:checked + .slider { background: var(--ok); border-color: transparent; }
   .switch input:checked + .slider::before { transform: translateX(20px); background: #000; }
+
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.62);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+  }
+  .confirm-overlay.show { display: flex; }
+  .confirm-box {
+    width: min(100%, 390px);
+    background: var(--panel);
+    color: var(--txt);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 18px 60px rgba(0,0,0,.45);
+  }
+  .confirm-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .confirm-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--bad);
+    font-weight: 650;
+  }
+  .confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    margin-top: 20px;
+  }
+  .confirm-actions button { width: 100%; }
+
 </style>
 </head>
 <body>
 <header>
-  <h1>EU Summon Unlock <span id="hdr_ver" style="color:var(--muted);font-weight:600;">V2.1</span></h1>
+  <h1>EU Summon Unlock <span id="hdr_ver" style="color:var(--muted);font-weight:600;"></span></h1>
   <span class="pill" id="conn">connecting…</span>
 </header>
 <main>
@@ -323,13 +363,13 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
       </label>
     </div>
     <div class="desc">
-      Injects <b>UI_fsdStopsControlEnabled = 1</b> on <b>0x3FD</b> mux0 bit38.<br>
+      Injects <b>UI_fsdStopsControlEnabled = 1 & UI_fsdContinueOnGreenWithCIPV = 1</b> on <b>0x3FD</b> mux0 bit38,39.<br>
       Off by default. Applied only while the injection gate is open.
     </div>
 
     <div class="lc-box">
       <div class="lc-head">
-        <span class="lc-title">Lane Change</span>
+        <span class="lc-title">Lane Change Settings</span>
         <span class="lc-current" id="blindspotCurrent">STANDARD</span>
       </div>
       <div class="lc-sub">BLINDSPOT CONFIG · AP / NOA ONLY</div>
@@ -373,7 +413,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
   </section>
 
   <section class="panel">
-    <h2>TLSSC Restore For Banned car only</h2>
+    <h2 style="color:red;">TLSSC RESTORE FOR BANNED CAR ONLY</h2>
     <div class="toggle-row">
       <span class="lbl">DAS_autopilotConfig = SELF_DRIVING</span>
       <label class="switch">
@@ -382,6 +422,7 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
       </label>
     </div>
     <div class="desc">
+       <span style="color:red;">Do not use on non banned car you will be banned instantly.<br></span>
       Rewrites <b>0x331</b> DAS_autopilotConfig.<br>
       Off by default. Applied only while the injection gate is open. May trigger an MCU reboot on the car.
     </div>
@@ -408,6 +449,18 @@ const char INDEX_HTML[] PROGMEM = R"HTML(<!doctype html>
     research / educational only · not for use on public roads
   </div>
 </main>
+
+
+<div class="confirm-overlay" id="tlrstConfirm" role="dialog" aria-modal="true" aria-labelledby="tlrstConfirmTitle">
+  <div class="confirm-box">
+    <div class="confirm-title" id="tlrstConfirmTitle">TLSSC Restore Warning</div>
+    <div class="confirm-text">Do not use on non banned car you will be banned instantly</div>
+    <div class="confirm-actions">
+      <button type="button" id="tlrstCancel">Cancel</button>
+      <button type="button" class="primary" id="tlrstConfirmBtn">Confirm</button>
+    </div>
+  </div>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -574,8 +627,42 @@ $('tlsscToggle').addEventListener('change', (e) => {
   post(e.target.checked ? '/api/tlssc-enable' : '/api/tlssc-disable');
 });
 
+const tlrstConfirm = $('tlrstConfirm');
+const tlrstCancel = $('tlrstCancel');
+const tlrstConfirmBtn = $('tlrstConfirmBtn');
+let tlrstPending = false;
+
+function closeTlrstConfirm() {
+  tlrstConfirm.classList.remove('show');
+  tlrstPending = false;
+}
+
+tlrstCancel.addEventListener('click', () => {
+  $('tlrstToggle').checked = false;
+  closeTlrstConfirm();
+});
+
+tlrstConfirmBtn.addEventListener('click', async () => {
+  closeTlrstConfirm();
+  $('tlrstToggle').checked = true;
+  await post('/api/tlrst-enable');
+});
+
+tlrstConfirm.addEventListener('click', (e) => {
+  if (e.target === tlrstConfirm) {
+    $('tlrstToggle').checked = false;
+    closeTlrstConfirm();
+  }
+});
+
 $('tlrstToggle').addEventListener('change', (e) => {
-  post(e.target.checked ? '/api/tlrst-enable' : '/api/tlrst-disable');
+  if (e.target.checked) {
+    tlrstPending = true;
+    e.target.checked = false;
+    tlrstConfirm.classList.add('show');
+  } else {
+    post('/api/tlrst-disable');
+  }
 });
 
 async function setBlindspotConfig(mode) {
