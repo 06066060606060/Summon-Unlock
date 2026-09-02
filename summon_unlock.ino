@@ -9,7 +9,7 @@
 #include <Update.h>
 #include "driver/twai.h"
 #include "index_html.h"
-#define FW_VERSION "V2.5.1"
+#define FW_VERSION "V2.6"
 static volatile bool forceMode = false;
 
 static portMUX_TYPE stateMux = portMUX_INITIALIZER_UNLOCKED;
@@ -256,6 +256,59 @@ static void doInjectSummon(const uint8_t *srcData, uint8_t dlc) {
     else               txFail++;
 }
 
+// ── Summon periodic transport ──────────────────────────────────
+// During Summoning, re-send the latest real 0x1021 mux1 frame
+// every 1 second, preserving all bytes except:
+//   bit 19 -> 0
+//   bit 47 -> 1
+#define SUMMON_PERIODIC_TX_MS 500
+static volatile uint32_t lastSummonPeriodicTxMs = 0;
+
+static void summonPeriodicTick() {
+    uint32_t now = (uint32_t)millis();
+    bool en, summoning, haveTemplate;
+    uint8_t data[8];
+
+    portENTER_CRITICAL(&stateMux);
+    en = summonEnabled;
+    summoning = gateSummoning;
+    haveTemplate = last1021Valid;
+    if (haveTemplate)
+        memcpy(data, last1021Data, 8);
+    portEXIT_CRITICAL(&stateMux);
+
+    // Only active while the Summoning gate is actually open.
+    if (!en || !summoning)
+        return;
+
+    // Do not transmit until a real mux1 frame has been received.
+    if (!haveTemplate)
+        return;
+
+    // One transmission every 1000 ms.
+    if (lastSummonPeriodicTxMs != 0 &&
+        (uint32_t)(now - lastSummonPeriodicTxMs) < SUMMON_PERIODIC_TX_MS)
+        return;
+
+    twai_message_t out;
+    out.identifier       = 1021;   // 0x3FD
+    out.data_length_code = 8;
+    out.flags             = 0;
+    memcpy(out.data, data, 8);
+
+    setBit(out.data, 19, false);
+    setBit(out.data, 47, true);
+
+    esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
+    if (err == ESP_OK) {
+        txOk++;
+        lastSummonPeriodicTxMs = now;
+    } else {
+        txFail++;
+    }
+}
+
+
 // ── TLSSC : 0x3FD mux0 bit38 -> UI_fsdStopsControlEnabled = 1 ──
 static void doInjectTLSSC(const uint8_t *srcData, uint8_t dlc) {
     if (dlc < 8) return;
@@ -266,6 +319,7 @@ static void doInjectTLSSC(const uint8_t *srcData, uint8_t dlc) {
     memcpy(out.data, srcData, 8);
 
     setBit(out.data, 38, true);   // UI_fsdStopsControlEnabled = 1
+    setBit(out.data, 39, true);   // UI_fsdContinueOnGreenWithCIPV = 1
 
     esp_err_t err = twai_transmit(&out, pdMS_TO_TICKS(2));
     if (err == ESP_OK) txOk++;
@@ -388,6 +442,9 @@ static void canTask(void *arg) {
             twai_initiate_recovery();
             vTaskDelay(pdMS_TO_TICKS(300));
         }
+
+        // Periodic 0x3FD/0x1021 mux1 re-transmission during Summoning.
+        summonPeriodicTick();
 
         uint32_t now = (uint32_t)millis();
         portENTER_CRITICAL(&stateMux);
@@ -640,7 +697,7 @@ static void webTask(void *arg) {
     WiFi.mode(WIFI_AP);
     uint8_t mac[6]; WiFi.softAPmacAddress(mac);
     char ssid[28];
-    snprintf(ssid, sizeof(ssid), "SummonUnlock-%02X%02X", mac[4], mac[5]);
+    snprintf(ssid, sizeof(ssid), "Summon-%02X%02X", mac[4], mac[5]);
     WiFi.softAP(ssid, "summon1234");
     Serial.printf("[WIFI] SSID=%s  PASS=summon1234  IP=%s\n",
                   ssid, WiFi.softAPIP().toString().c_str());
