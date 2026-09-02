@@ -1,4 +1,4 @@
-# EU Summon Unlock V2.5.1
+# EU Summon Unlock V2.6.0
 
 ### ESP32 firmware for Tesla Smart Summon & Autopilot EU restriction research
 
@@ -16,27 +16,24 @@
 
 ## 📋 What's New
 
-### V2.5.1
+### V2.6.0
+- Includes an updated summon logic for much better stability. (500ms echo)
 
-- Added **TLSSC Restore** for banned cars. 
-- Added blindspot aggressiveness settings during lane change (madmax)
 
-### V2.4
+## 🇪🇺 EU Unlock
 
-- Fixed an error that could inject **TLSSC even when disabled**.
-
-### V2.3
-
-- Added a dashboard toggle to enable **TLSSC** where it is not available.
-  - A valid **FSD subscription** is required.
 - Bypass **R79 EU restriction** in AP.
-- Expanded Summon range to **±85 m**.
+- Expand Summon range to **±85 m**.
 - Expanded lateral acceleration limits.
 - Lane changes near forks are not disabled (EAP).
 - Instantaneous lane change on blinker (EAP).
 - No lane-change timeout once initiated (EAP).
 - Automatically takes forks and exits (EAP).
-- Continue on Green with Car in Front (EAP).
+- blindspot aggressiveness settings during lane change (madmax)
+- Toggle to activate **TLSSC** where it is not available.
+  - A valid **EAP/FSD subscription** is required.
+- Continue on Green with Car in Front (**TLSSC**).
+- **TLSSC Restore** for banned cars. 
 - OTA update support.
 
 ---
