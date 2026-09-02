@@ -12,7 +12,7 @@
 
 ---
 
-### ⚠️ DO NOT APPLY TLSSC RESTORE ON NON BANNED CAR (you will be banned instantly)
+### ⚠️ DO NOT ACTIVATE TLSSC RESTORE ON NON BANNED CAR (you will be banned instantly)
 
 ## 📋 What's New
 
