@@ -35,6 +35,7 @@
 - Continue on Green with Car in Front (**TLSSC**).
 - **TLSSC Restore** for banned cars. 
 - OTA update support.
+- ulcBlindSpot can be set to agressive, (it's the default setting by Tesla)
 
 ---
 
